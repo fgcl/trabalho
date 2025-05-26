@@ -2,7 +2,7 @@
 /**
  * @file main.c
  * @brief Jogo de Memória
- * @authors Felipe Gonçalves, Guilherme Barretto, Geovanna Sargaço
+ * @authors Felipe Gonçalves, Guilherme Barretto e Geovanna Sargaço.
  * @date 06/2025
  * @version 0.1
  * @license GPL
@@ -95,6 +95,10 @@ int definir_jogador()
 
 /** 
 * @todo: Fazer a parte gráfica do registro do jogador.
+* @note: Descrição:
+* Está função é para ser executada depois de aparecer o ranking (quando o jogador perder) e na primeira execução.
+* Objetivo: Aparecer uma tela pedindo para o jogador digitar um nick. 
+*
 */
 int registro_do_jogador()
 {
@@ -113,7 +117,6 @@ int gerador_de_numeros(int i)
     n = rand() % i;
     return n;
 }
-
 
 int gabarito(int fase)
 {
@@ -145,8 +148,8 @@ int gabarito(int fase)
             i++;
         }
     }
-
 } /* fim da função tabuleiro */
+
 
 void janela()
 {
