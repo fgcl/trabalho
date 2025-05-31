@@ -42,7 +42,7 @@
 #define BUZZER 7
 #define MICROFONE A0
 
-// Como vai faltar pinos no Arduino, os botões serão ligados aos pinos analógicos
+// Como vai faltar pinos no Arduino, os botões serão ligados aos pinos analógicos.
 #define BOTAO_ACAO A2
 #define BOTAO_DIMINUIR A3
 #define BOTAO_CONFIRMAR A4
@@ -51,7 +51,7 @@
 /* ==================== Declaração de Variáveis Globais ==================== */
 
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
-estado = 0;
+int estado = 0;
 
 /* ========================= Protótipos de Funções ========================= */
 
@@ -147,7 +147,7 @@ int escolher_numero() {
    lcd.setCursor(0,1);
    lcd.print("entre 0 e 10");
    delay(1000);
-   while (digitalRead(BOTAO_CONFIRMAR) == HIGH) {
+   while (digitalRead(BOTAO_CONFIRMAR) == LOW) {
       lcd.clear();
       lcd.setCursor(0, 0);
       lcd.print("Numero escolhido: ");
@@ -162,7 +162,6 @@ int escolher_numero() {
    lcd.clear();
    return numero;
 }
-
 
 // TODO: Refatorar as funções abaixo.
 // Função para o arduino ouvinte.
