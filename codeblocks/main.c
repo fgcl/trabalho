@@ -117,7 +117,10 @@ void tela_de_cadastro()
     int tecla = 0, indice_do_nome = 0;
     char nome[10] = "\0";
     int mouse_no_retangulo = 0;
-
+   
+ 
+    Texture2D fundo = LoadTexture("fundoInicio.png");  // Carregamento da imagem de fundo da tela de cadastro.
+ 
     while (!WindowShouldClose())
     {
         // verifica se o mouse está dentro do retangulo.
