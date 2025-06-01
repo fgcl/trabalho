@@ -117,11 +117,16 @@ void tela_de_cadastro()
     int tecla = 0, indice_do_nome = 0;
     char nome[10] = "\0";
     int mouse_no_retangulo = 0;
-   
+    
+    /* Area de carregamento do rshape */
     //Texture2D fundo = LoadTexture("fundoInicio.png");  // Carregamento da imagem de fundo da tela de cadastro.
+
     Image image = LoadImage("fundoInicio.png"); // Carregar imagem na RAM.
     Texture2D fundo = LoadTextureFromImage(image); // Converter para textura, para usar a GPU memory (VRAM)
     UnloadImage(image); // Remover imagem da RAM.
+
+    // gostei de aprender isso de definir antes e depois carregar a textura.
+    Rectangle retangulo = {250/2, 250 - 50, 250, 50}; // Define o retangulo para deixar redondo.
 
     while (!WindowShouldClose())
     {
@@ -169,14 +174,14 @@ void tela_de_cadastro()
         DrawTexture(fundo, 0, 0, WHITE); // desenha o fundo.
 
         DrawText("Digite o seu nome:", 250/2, 180, 20, BLUE); // DrawText("texto", posição_x, posição_y, tamanho_fonte, cor)
-        DrawRectangle(250/2, 250 - 50, 250, 50, BLACK); // DrawRectangle(posição_x, posição_y, largura, altura, cor)
+        DrawRectangleRounded(retangulo, 0.1, 0, BLACK);
 
         if (mouse_no_retangulo)
         {
-            DrawRectangleLines(250/2, 250 - 50, 250, 50, BLUE);
+            DrawRectangleRoundedLines(retangulo, 0.1, 0, BLUE);
         }
         else{
-            DrawRectangleLines(250/2, 250 - 50, 250, 50, GRAY);
+            DrawRectangleRoundedLines(retangulo, 0.1, 0, GRAY);
         }
 
         DrawText(nome, 250/2 + 5, 200 + 8, 40, RED);
