@@ -11,9 +11,9 @@
  * É um jogo simples de memorização, onde o jogador deve clicar
  * nos quadrados revelados anteriormente.
  *
- * @warning
- * Uso de IA: Autocomplete de código, auxílio na documentação e
- * para aprendizagem de funções da raylib.
+ * @warning Uso de IA: 
+ *  Autocomplete de código, auxílio na documentação e calculo
+ * para centralização de elementos graficos.
  */
 
  /* ====================== Diretivas de Processamento ====================== */
@@ -39,7 +39,7 @@ void tela_de_contagem();
 int registro_do_jogador();
 int definir_jogador();
 int gerador_de_numeros(int i);
-int gabarito(int fase);
+int tela_do_tabuleiro(int fase);
 void fim_de_jogo();
 int ranking();
 
@@ -65,9 +65,21 @@ typedef struct registo_de_jogadores
 
 registro jogador[4]; // Vetor de jogadores max = 4;
 int contador_de_jogadores = 0;
+int indice_do_jogador = 0;
+const int largura_da_tela = 500;
+const int altura_da_tela = 500;
 
 /* =========================== Função Principal ============================ */
 
+/* Timeline:
+- 1. Janela que pede o nick do jogador. (OK)
+- 2. Contador de tempo. 
+- 2. Mostra o gabarito do tabuleiro na tela por 5 segundos. (OK)
+- 3. Pede para o jogador clicar nos quadrados revelados anteriormente. (OK)
+- 4. Se o jogador acertar, o quadrado fica verde (OK) e passa para a próxima fase.
+- 5. Se o jogador errar, é game over.
+- 6. Uma tela de ranking deve aparecer quando o jogador perde.
+*/
 int main()
 {
     // Inicialização da semente para geração de números aleatórios.
@@ -76,7 +88,7 @@ int main()
     // Inicialização da janela.
     SetTraceLogLevel(5); // Definir o log como 5 (mostrar somente erros).
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    InitWindow(500, 500, "Jogo da Memoria");
+    InitWindow(largura_da_tela, altura_da_tela, "Jogo da Memoria");
 
     // Definir o ícone da janela.
     Image icon = LoadImage("icon.png");
@@ -87,15 +99,6 @@ int main()
 }
 
 /* ======================= Desenvolvimento de Funções ====================== */
-
-/* Timeline:
-- 1. Janela que pede o nick do jogador.
-- 2. Mostra o gabarito do tabuleiro na tela por 5 segundos.
-- 3. Pede para o jogador clicar nos quadrados revelados anteriormente.
-- 4. Se o jogador acertar, o quadrado fica verde e passa para a próxima fase.
-- 5. Se o jogador errar, é game over.
-- 6. Uma tela de ranking deve aparecer quando o jogador perde.
-*/
 
 /**
  * @brief Janela de cadastro do nome do jogador.
@@ -131,7 +134,8 @@ void tela_de_cadastro()
     while (!WindowShouldClose())
     {
         // Verifica se o mouse está dentro do retangulo.
-        mouse_no_retangulo = (GetMouseX()>125 && GetMouseX()<375 && GetMouseY()>200 && GetMouseY()<250)?
+        //mouse_no_retangulo = (GetMouseX()>125 && GetMouseX()<375 && GetMouseY()>200 && GetMouseY()<250)?
+        (CheckCollisionPointRec(GetMousePosition(), retangulo))?
         1: 0;
         if (mouse_no_retangulo)
         {
@@ -150,7 +154,8 @@ void tela_de_cadastro()
             }
             if (IsKeyPressed(KEY_ENTER) && indice_do_nome>3)
             {
-                strcpy(jogador[0].nick, nome);
+                indice_do_jogador = definir_jogador();
+                strcpy(jogador[indice_do_jogador].nick, nome);
                 tela_de_contagem();
                 //printf("Nome escolhido: %s\n", nome);
 
@@ -226,22 +231,63 @@ int gerador_de_numeros(int i)
     return n;
 }
 
-int gabarito(int fase)
+/**
+ * @brief Renderiza e gerencia a tela do tabuleiro de jogo.
+ * 
+ * Esta função cria um tabuleiro de jogo com tamanho dinâmico baseado na fase atual,
+ * gera posições aleatórias para quadrados azuis, e permite que o jogador interaja
+ * clicando nos quadrados dentro de um tempo limite.
+ * 
+ * @param fase Número da fase atual, que determina o tamanho do tabuleiro e número de quadrados
+ * @return int Valor de retorno não utilizado (pode ser modificado para retornar resultado do jogo)
+ * 
+ * @note A função gerencia a lógica de pontuação, renderização e interação do jogo de memória
+ * @author Felipe
+ * 
+ *  TODO: 
+ * 1. Definir o indice do jogador que está jogando.
+ * 2. Mostrar o tempo
+ * 3. Mostrar o nome
+ * 4. Interromper a função depois de um tempo.
+ * 5. Chamar a função novamente com nova fase.
+ */
+int tela_do_tabuleiro(int fase)
 {
+    // Variaveis da matriz
     int tamanho_do_tabuleiro, i;
     tamanho_do_tabuleiro = (fase <= 7) ? 4 : (fase <= 13) ? 5 : 6;
     int matriz[tamanho_do_tabuleiro][tamanho_do_tabuleiro];
+    int matriz_do_jogador[tamanho_do_tabuleiro][tamanho_do_tabuleiro];
     int linha, coluna, linha_aleatoria, coluna_aleatoria;
+    int cliques = 0;
 
-    /* Loop para preencher a matriz */
+    char txt_pontos[30];
+
+    // Variaveis gráficas
+    int quadrado_tamanho = 50; // Tamanho de cada quadrado
+    int espaco = 5; // Espaço entre os quadrados
+
+    double tempo_inicio = GetTime();
+    double tempo_limite = 5.0; // Mostrar por 5 segundos
+    double tempo;
+
+    // Calculo feito por IA para centralizar o tabuleiro.
+    int tabuleiro_largura = tamanho_do_tabuleiro * quadrado_tamanho; // tl = 4,5 ou 6 * 50
+    int tabuleiro_altura = tamanho_do_tabuleiro * quadrado_tamanho; // ta = 4,5 ou 6 * 50
+    int inicio_x = (largura_da_tela - tabuleiro_largura)/2; //
+    int inicio_y = (altura_da_tela - tabuleiro_altura)/2;
+//    int x = inicio_x + coluna * (quadrado_tamanho + espaco);
+//    int y = inicio_y + linha * (quadrado_tamanho + espaco);
+
+
+    /* Loop para preencher as matrizes */
     for(linha = 0; linha<tamanho_do_tabuleiro; linha++)
     {
         for(coluna = 0; coluna<tamanho_do_tabuleiro; coluna++)
         {
             matriz[linha][coluna] = 0;
-            printf("%d", matriz[linha][coluna]);
+            matriz_do_jogador[linha][coluna] = 0;
         } /* fim do loop das colunas */
-        printf("\n");
     } /* fim do loop das linhas */
 
     // TODO: Pensar em um jeito de juntar esses dois loops.
@@ -256,4 +302,103 @@ int gabarito(int fase)
             i++;
         }
     }
+
+    while (!WindowShouldClose())
+    {
+        BeginDrawing();
+        ClearBackground(BLACK);
+        int pontuacao = jogador[0].pontos;
+        sprintf(txt_pontos, "Pontos: %d", pontuacao);
+        DrawText(txt_pontos, 0, 0, 20, BLUE);
+        if (GetTime() - tempo_inicio < tempo_limite)
+        {
+            for (linha = 0; linha < tamanho_do_tabuleiro; linha++)
+            {
+                for (coluna = 0; coluna < tamanho_do_tabuleiro; coluna++)
+                {
+                    Color cor = (matriz[linha][coluna] == 1) ? BLUE : GRAY;
+
+                    /* Calculo feito por IA */
+                    int x = inicio_x + coluna * (quadrado_tamanho + espaco);
+                    int y = inicio_y + linha * (quadrado_tamanho + espaco);
+
+                    DrawRectangle(x, y, quadrado_tamanho, quadrado_tamanho, cor);
+                }
+            }
+        }
+        else
+        {
+            if (GetTime() - tempo_inicio < 6.0)
+            {
+                DrawText("Tempo esgotado!", 250/2, 250 - 15, 30, WHITE); // Tamanho da fonte 40
+            }
+            else
+            {
+                for (linha = 0; linha < tamanho_do_tabuleiro; linha++)
+                {
+                    for (coluna = 0; coluna < tamanho_do_tabuleiro; coluna++)
+                    {
+                        Color cor = GRAY; // Deixa todos os quadrados cinzas
+                        if (matriz_do_jogador[linha][coluna] == 1) cor = GREEN;
+
+                        // Calculo feito por IA
+                        int x = inicio_x + coluna * (quadrado_tamanho + espaco);
+                        int y = inicio_y + linha * (quadrado_tamanho + espaco);
+
+                        // Checar se o mouse está sendo pressionado
+                        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && cliques < fase)
+                        {
+                            // Checar se o mouse está no quadrado.
+                            if (GetMouseX() >= x && GetMouseX() <= x + quadrado_tamanho &&
+                                    GetMouseY() >= y && GetMouseY() <= y + quadrado_tamanho)
+                            {
+                                cliques++;
+                                matriz_do_jogador[linha][coluna] = 1;
+                                tempo = GetTime();
+                            }
+                        }
+                        else if(cliques==fase)
+                        {
+
+                            for(linha=0; linha<tamanho_do_tabuleiro; linha++)
+                            {
+                                for(coluna=0; coluna<tamanho_do_tabuleiro; coluna++)
+                                {
+                                    if(matriz[linha][coluna] == 1 && matriz_do_jogador[linha][coluna] == 1)
+                                    {
+                                        jogador[0].pontos += 100;
+                                    }
+                                }
+                            }
+                            cliques += 1;
+                        }
+                        // Executa quando tiver calculado os pontos.
+                        if(cliques>fase)
+                        {
+                            if(matriz[linha][coluna] == 1 && matriz_do_jogador[linha][coluna] == 0)
+                                cor = BLUE;
+                            else if(matriz[linha][coluna] == 0 && matriz_do_jogador[linha][coluna] == 1)
+                            {
+                                cor = RED;
+                            }
+                            else if(matriz[linha][coluna] == 1 && matriz_do_jogador[linha][coluna] == 1)
+                            {
+                                cor = GREEN;
+                            }
+                            else if(matriz[linha][coluna] == 0 && matriz_do_jogador[linha][coluna] == 0)
+                                cor = GRAY;
+                        }
+                        DrawRectangle(x, y, quadrado_tamanho, quadrado_tamanho, cor);
+
+                        int pontuacao = jogador[0].pontos;
+                        sprintf(txt_pontos, "Pontos: %d", pontuacao);
+                        DrawText(txt_pontos, 0, 0, 20, BLUE);
+                    }
+                }
+            }
+
+        }
+        EndDrawing();
+    }
+    CloseWindow();
 } /* fim da função tabuleiro */
