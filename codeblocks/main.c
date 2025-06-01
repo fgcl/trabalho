@@ -118,12 +118,14 @@ void tela_de_cadastro()
     char nome[10] = "\0";
     int mouse_no_retangulo = 0;
    
- 
-    Texture2D fundo = LoadTexture("fundoInicio.png");  // Carregamento da imagem de fundo da tela de cadastro.
- 
+    //Texture2D fundo = LoadTexture("fundoInicio.png");  // Carregamento da imagem de fundo da tela de cadastro.
+    Image image = LoadImage("fundoInicio.png"); // Carregar imagem na RAM.
+    Texture2D fundo = LoadTextureFromImage(image); // Converter para textura, para usar a GPU memory (VRAM)
+    UnloadImage(image); // Remover imagem da RAM.
+
     while (!WindowShouldClose())
     {
-        // verifica se o mouse está dentro do retangulo.
+        // Verifica se o mouse está dentro do retangulo.
         mouse_no_retangulo = (GetMouseX()>125 && GetMouseX()<375 && GetMouseY()>200 && GetMouseY()<250)?
         1: 0;
         if (mouse_no_retangulo)
@@ -164,6 +166,8 @@ void tela_de_cadastro()
         // Desenha na tela.
         BeginDrawing();
         ClearBackground(BLACK);
+        DrawTexture(fundo, 0, 0, WHITE); // desenha o fundo.
+
         DrawText("Digite o seu nome:", 250/2, 180, 20, BLUE); // DrawText("texto", posição_x, posição_y, tamanho_fonte, cor)
         DrawRectangle(250/2, 250 - 50, 250, 50, BLACK); // DrawRectangle(posição_x, posição_y, largura, altura, cor)
 
@@ -189,7 +193,7 @@ void tela_de_cadastro()
  *
  * @return int Indice do vetor do registro (0-4)
  *
- * @author Felipe Gonçalves
+ * @author Felipe
  */
 int definir_jogador()
 {
