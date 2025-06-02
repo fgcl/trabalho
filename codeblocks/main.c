@@ -11,8 +11,10 @@
  * É um jogo simples de memorização, onde o jogador deve clicar
  * nos quadrados revelados anteriormente.
  *
+ * Problemas encontrados: passar uma matriz para outra função. VLA - Variable Length Array
+ *
  * @warning Uso de IA: 
- *  Autocomplete de código, auxílio na documentação e calculo
+ *  Autocomplete de código, auxílio na documentação e cálculos
  * para centralização de elementos graficos.
  */
 
@@ -42,6 +44,9 @@ int gerador_de_numeros(int i);
 int tela_do_tabuleiro(int fase);
 void fim_de_jogo();
 int ranking();
+void aleatorizar_tabuleiro(int fase, int tamanho, int (*matriz)[tamanho]);
+void limpar_matriz(int tamanho, int (*matriz)[tamanho]);
+int definir_tamanho(int fase);
 
 /* =============================== Registros =============================== */
 /**
@@ -224,13 +229,6 @@ int definir_jogador()
     return numero_do_jogador;
 }
 
-int gerador_de_numeros(int i)
-{
-    int n;
-    n = rand() % i;
-    return n;
-}
-
 /**
  * @brief Renderiza e gerencia a tela do tabuleiro de jogo.
  * 
@@ -254,54 +252,32 @@ int gerador_de_numeros(int i)
 int tela_do_tabuleiro(int fase)
 {
     // Variaveis da matriz
-    int tamanho_do_tabuleiro, i;
-    tamanho_do_tabuleiro = (fase <= 7) ? 4 : (fase <= 13) ? 5 : 6;
+    int i, tamanho_do_tabuleiro = definir_tamanho(fase);
     int matriz[tamanho_do_tabuleiro][tamanho_do_tabuleiro];
     int matriz_do_jogador[tamanho_do_tabuleiro][tamanho_do_tabuleiro];
-    int linha, coluna, linha_aleatoria, coluna_aleatoria;
+    int gabarito, escolha;
+    int linha, coluna;
     int cliques = 0;
 
-    char txt_pontos[30];
+    limpar_matriz(tamanho_do_tabuleiro, matriz);
+    limpar_matriz(tamanho_do_tabuleiro, matriz_do_jogador);
+    aleatorizar_tabuleiro(fase ,tamanho_do_tabuleiro, matriz);
 
     // Variaveis gráficas
+    char txt_pontos[30];
     int quadrado_tamanho = 50; // Tamanho de cada quadrado
     int espaco = 5; // Espaço entre os quadrados
 
     double tempo_inicio = GetTime();
     double tempo_limite = 5.0; // Mostrar por 5 segundos
     double tempo;
-
-    // Calculo feito por IA para centralizar o tabuleiro.
+    // Calculo feito por IA para centralizar o tabuleiro
     int tabuleiro_largura = tamanho_do_tabuleiro * quadrado_tamanho; // tl = 4,5 ou 6 * 50
     int tabuleiro_altura = tamanho_do_tabuleiro * quadrado_tamanho; // ta = 4,5 ou 6 * 50
     int inicio_x = (largura_da_tela - tabuleiro_largura)/2; //
     int inicio_y = (altura_da_tela - tabuleiro_altura)/2;
 //    int x = inicio_x + coluna * (quadrado_tamanho + espaco);
 //    int y = inicio_y + linha * (quadrado_tamanho + espaco);
-
-
-    /* Loop para preencher as matrizes */
-    for(linha = 0; linha<tamanho_do_tabuleiro; linha++)
-    {
-        for(coluna = 0; coluna<tamanho_do_tabuleiro; coluna++)
-        {
-            matriz[linha][coluna] = 0;
-            matriz_do_jogador[linha][coluna] = 0;
-        } /* fim do loop das colunas */
-    } /* fim do loop das linhas */
-
-    // TODO: Pensar em um jeito de juntar esses dois loops.
-
-    for(i=0; i<fase;)
-    {
-        linha_aleatoria = gerador_de_numeros(tamanho_do_tabuleiro);
-        coluna_aleatoria = gerador_de_numeros(tamanho_do_tabuleiro);
-        if (matriz[linha_aleatoria][coluna_aleatoria] == 0)
-        {
-            matriz[linha_aleatoria][coluna_aleatoria] = 1;
-            i++;
-        }
-    }
 
     while (!WindowShouldClose())
     {
@@ -354,7 +330,16 @@ int tela_do_tabuleiro(int fase)
                             {
                                 cliques++;
                                 matriz_do_jogador[linha][coluna] = 1;
-                                tempo = GetTime();
+                            }
+                        }
+                        else if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON) && cliques < fase)
+                        {
+                            // Checar se o mouse está no quadrado.
+                            if (GetMouseX() >= x && GetMouseX() <= x + quadrado_tamanho &&
+                                    GetMouseY() >= y && GetMouseY() <= y + quadrado_tamanho)
+                            {
+                                cliques--;
+                                matriz_do_jogador[linha][coluna] = 0;
                             }
                         }
                         else if(cliques==fase)
@@ -375,17 +360,15 @@ int tela_do_tabuleiro(int fase)
                         // Executa quando tiver calculado os pontos.
                         if(cliques>fase)
                         {
-                            if(matriz[linha][coluna] == 1 && matriz_do_jogador[linha][coluna] == 0)
+                            gabarito = matriz[linha][coluna];
+                            escolha = matriz_do_jogador[linha][coluna];
+                            if(gabarito == 1 && escolha == 0)
                                 cor = BLUE;
-                            else if(matriz[linha][coluna] == 0 && matriz_do_jogador[linha][coluna] == 1)
-                            {
+                            else if(gabarito == 0 && escolha == 1)
                                 cor = RED;
-                            }
-                            else if(matriz[linha][coluna] == 1 && matriz_do_jogador[linha][coluna] == 1)
-                            {
+                            else if(gabarito == 1 && escolha == 1)
                                 cor = GREEN;
-                            }
-                            else if(matriz[linha][coluna] == 0 && matriz_do_jogador[linha][coluna] == 0)
+                            else if(gabarito == 0 && escolha == 0)
                                 cor = GRAY;
                         }
                         DrawRectangle(x, y, quadrado_tamanho, quadrado_tamanho, cor);
@@ -402,3 +385,44 @@ int tela_do_tabuleiro(int fase)
     }
     CloseWindow();
 } /* fim da função tabuleiro */
+
+int gerador_de_numeros(int i)
+{
+    int n;
+    n = rand() % i;
+    return n;
+}
+
+void limpar_matriz(int tamanho, int (*matriz)[tamanho])
+{
+    int linha, coluna;
+    /* Loop para preencher as matrizes com 0 */
+    for(linha = 0; linha<tamanho; linha++)
+    {
+        for(coluna = 0; coluna<tamanho; coluna++)
+        {
+            matriz[linha][coluna] = 0;
+        } /* fim do loop das colunas */
+    } /* fim do loop das linhas */
+}
+
+void aleatorizar_tabuleiro(int fase, int tamanho, int (*matriz)[tamanho])
+{
+    int linha_aleatoria, coluna_aleatoria, i;
+    for(i=0; i<fase;)
+    {
+        linha_aleatoria = gerador_de_numeros(tamanho);
+        coluna_aleatoria = gerador_de_numeros(tamanho);
+        if (matriz[linha_aleatoria][coluna_aleatoria] == 0)
+        {
+            matriz[linha_aleatoria][coluna_aleatoria] = 1;
+            i++;
+        }
+    }
+}
+
+int definir_tamanho(int fase){
+    int tamanho;
+    tamanho = (fase <= 5) ? 4 : (fase <= 10) ? 5 : 6;
+    return tamanho;
+}
