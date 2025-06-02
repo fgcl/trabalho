@@ -51,7 +51,8 @@
 /* ==================== Declaração de Variáveis Globais ==================== */
 
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
-int estado = 0;
+int modo = 0,
+    etapa = 0;
 
 /* ========================= Protótipos de Funções ========================= */
 
@@ -59,108 +60,141 @@ void arduino_falante();
 void arduino_ouvinte();
 int escolher_numero();
 void reproduzir_som(int byte1, int byte2, int byte3, int byte4);
+void selecionar_modo();
+void resetar();
 
 /* ============================== Função Setup ============================= */
 
 void setup() {
-   //Define o número de colunas e linhas do LCD
-   lcd.begin(16, 2);
-   pinMode(BOTAO_ACAO, INPUT);
-   pinMode(BOTAO_DIMINUIR, INPUT);
-   pinMode(BOTAO_CONFIRMAR, INPUT);
-   pinMode(BOTAO_AUMENTAR, INPUT);
-   pinMode(LED_VERDE, OUTPUT);
-   pinMode(LED_AMARELO, OUTPUT);
-   pinMode(LED_VERMELHO, OUTPUT);
-   pinMode(BUZZER, OUTPUT);
-   pinMode(MICROFONE, INPUT);
+  //Define o número de colunas e linhas do LCD
+  lcd.begin(16, 2);
+  pinMode(BOTAO_ACAO, INPUT);
+  pinMode(BOTAO_DIMINUIR, INPUT);
+  pinMode(BOTAO_CONFIRMAR, INPUT);
+  pinMode(BOTAO_AUMENTAR, INPUT);
+  pinMode(LED_VERDE, OUTPUT);
+  pinMode(LED_AMARELO, OUTPUT);
+  pinMode(LED_VERMELHO, OUTPUT);
+  pinMode(BUZZER, OUTPUT);
+  pinMode(MICROFONE, INPUT);
+
+  Serial.begin(9600);
 }
 
 /* ============================== Função Loop ============================== */
 void loop() {
-   // O arduino entra no modo falante.
-   if (digitalRead(BOTAO_ACAO) == HIGH) {
-      estado = 1;
-   }
-   // O arduino entra no modo ouvinte.
-   if (digitalRead(BOTAO_ACAO) == LOW) {
-      estado = 0;
-   }
+  switch (etapa) {
+    case 0:
+      selecionar_modo();
+      break;
+    case 1:
+      if (modo == 1) {
+        arduino_falante();
+      } else {
+        arduino_ouvinte();
+      }
+      break;
+  }
 }
 
 /* ====================== Desenvolvimento das Funções ====================== */
 
+void selecionar_modo() {
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Escolha o modo:");
+  while (digitalRead(BOTAO_CONFIRMAR) == LOW) {
+    lcd.setCursor(0, 1);
+    if (digitalRead(BOTAO_AUMENTAR) == HIGH) {
+      modo = 1;
+    } else if (digitalRead(BOTAO_DIMINUIR) == HIGH) {
+      modo = 0;
+    }
+    if (modo == 1) {
+      lcd.print("enviar..>RECEBER");
+    } else {
+      lcd.print("ENVIAR<..receber");
+    }
+  }
+  etapa = 1;
+}
+
 // Função para o arduino falante.
 void arduino_falante() {
-   int numero = escolher_numero();
-   while(BOTAO_ACAO == HIGH){
-      switch (numero) {
-         case 1: // equivale a 0001
-            reproduzir_som(200, 200, 200, 800);
-            break;
-         case 2: // equivale a 0010
-            reproduzir_som(200, 200, 800, 200);
-            break;
-         case 3: // equivale a 0011
-            reproduzir_som(200, 200, 800, 800);
-            break;
-         case 4: // equivale a 0100
-            reproduzir_som(200, 800, 200, 200);
-            break;
-         case 5: // equivale a 0101
-            reproduzir_som(200, 800, 200, 800);
-            break;
-         case 6: // equivale a 0110
-            reproduzir_som(200, 800, 800, 200);
-            break;
-         case 7: // equivale a 0111
-            reproduzir_som(200, 800, 800, 800);
-            break;
-         case 8: // equivale a 1000
-            reproduzir_som(800, 200, 200, 200);
-            break;
-         case 9: // equivale a 1001
-            reproduzir_som(800, 200, 200, 800);
-            break;
-      }
-   }
+  int numero = escolher_numero();
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Tocando...");
+  while (digitalRead(BOTAO_ACAO) == LOW) {
+    switch (numero) {
+      case 1:  // equivale a 0001
+        reproduzir_som(200, 200, 200, 800);
+        break;
+      case 2:  // equivale a 0010
+        reproduzir_som(200, 200, 800, 200);
+        break;
+      case 3:  // equivale a 0011
+        reproduzir_som(200, 200, 800, 800);
+        break;
+      case 4:  // equivale a 0100
+        reproduzir_som(200, 800, 200, 200);
+        break;
+      case 5:  // equivale a 0101
+        reproduzir_som(200, 800, 200, 800);
+        break;
+      case 6:  // equivale a 0110
+        reproduzir_som(200, 800, 800, 200);
+        break;
+      case 7:  // equivale a 0111
+        reproduzir_som(200, 800, 800, 800);
+        break;
+      case 8:  // equivale a 1000
+        reproduzir_som(800, 200, 200, 200);
+        break;
+      case 9:  // equivale a 1001
+        reproduzir_som(800, 200, 200, 800);
+        break;
+    }
+  }
 }
 
 void reproduzir_som(int bit1, int bit2, int bit3, int bit4) {
-   tone(BUZZER, bit1);
-   delay(200);
-   tone(BUZZER, bit2);
-   delay(200);
-   tone(BUZZER, bit3);
-   delay(200);
-   tone(BUZZER, bit4);
-   delay(200);
-   noTone(BUZZER);
+  tone(BUZZER, bit1);
+  delay(200);
+  tone(BUZZER, bit2);
+  delay(200);
+  tone(BUZZER, bit3);
+  delay(200);
+  tone(BUZZER, bit4);
+  delay(200);
+  noTone(BUZZER);
 }
 
 // Função para o jogador escolher o número.
 int escolher_numero() {
-   int numero = 0;
-   lcd.clear();
-   lcd.setCursor(0, 0);
-   lcd.print("Escolha um numero");
-   lcd.setCursor(0,1);
-   lcd.print("entre 0 e 10");
-   delay(1000);
-   while (digitalRead(BOTAO_CONFIRMAR) == LOW) {
-      lcd.clear();
-      lcd.setCursor(0, 0);
-      lcd.print("Numero escolhido: ");
-      lcd.print(numero);
-      if (digitalRead(BOTAO_AUMENTAR) == HIGH && numero < 10) {
-         numero++;
-      }
-      if (digitalRead(BOTAO_DIMINUIR) == HIGH && numero > 0) {
-         numero--;
-      }
-   }
-   lcd.clear();
-   return numero;
+  int numero = 0;
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Escolha o numero");
+  lcd.setCursor(0, 1);
+  lcd.print("entre 0 a 10");
+  delay(2000);
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Numero: ");
+  while (digitalRead(BOTAO_CONFIRMAR) == LOW) {
+    lcd.setCursor(0, 1);
+    lcd.print(numero);
+    if (digitalRead(BOTAO_AUMENTAR) == HIGH && numero < 10) {
+      numero++;
+      delay(200);
+    }
+    if (digitalRead(BOTAO_DIMINUIR) == HIGH && numero > 0) {
+      numero--;
+      delay(200);
+    } 
+  }
+  return numero;
 }
 
 // TODO: Refatorar as funções abaixo.
@@ -192,60 +226,60 @@ void arduino_ouvinte() {
   //Serial.print(bits[1]);
   //Serial.print(bits[2]);
   //Serial.print(bits[3]);
-  
+
   verificar_sequencia(bits[0], bits[1], bits[2], bits[3]);
 }
 
-void verificar_sequencia(int bit1, int bit2, int bit3, int bit4){
-   if(bit1 == 200 && bit2 == 200 && bit3 == 200 && bit4 == 800){
-      lcd.clear();
-      lcd.setCursor(0, 0);
-      lcd.print("Numero: 1");
-      delay(1000);
-   } else if(bit1 == 200 && bit2 == 200 && bit3 == 800 && bit4 == 200){
-      lcd.clear();
-      lcd.setCursor(0, 0);
-      lcd.print("Numero: 2");
-      delay(1000);
-   }else if(bit1 == 200 && bit2 == 200 && bit3 == 800 && bit4 == 800){
-      lcd.clear();
-      lcd.setCursor(0, 0);
-      lcd.print("Numero: 3");
-      delay(1000);
-   }else if(bit1 == 200 && bit2 == 800 && bit3 == 200 && bit4 == 200){
-      lcd.clear();
-      lcd.setCursor(0, 0);
-      lcd.print("Numero: 4");
-      delay(1000);
-   }else if(bit1 == 200 && bit2 == 800 && bit3 == 200 && bit4 == 800){
-      lcd.clear();
-      lcd.setCursor(0, 0);
-      lcd.print("Numero: 5");
-      delay(1000);
-   }else if(bit1 == 200 && bit2 == 800 && bit3 == 800 && bit4 == 200){
-      lcd.clear();
-      lcd.setCursor(0, 0);
-      lcd.print("Numero: 6");
-      delay(1000);
-   }else if(bit1 == 200 && bit2 == 800 && bit3 == 800 && bit4 == 800){
-      lcd.clear();
-      lcd.setCursor(0, 0);
-      lcd.print("Numero: 7");
-      delay(1000);
-   }else if(bit1 == 800 && bit2 == 200 && bit3 == 200 && bit4 == 200){
-      lcd.clear();
-      lcd.setCursor(0, 0);
-      lcd.print("Numero: 8");
-      delay(1000);
-   }else if(bit1 == 800 && bit2 == 200 && bit3 == 200 && bit4 == 800){
-      lcd.clear();
-      lcd.setCursor(0, 0);
-      lcd.print("Numero: 9");
-      delay(1000);
-   }else{
-      lcd.clear();
-      lcd.setCursor(0, 0);
-      lcd.print("Numero Invalido");
-      delay(1000);
-   }
+void verificar_sequencia(int bit1, int bit2, int bit3, int bit4) {
+  if (bit1 == 200 && bit2 == 200 && bit3 == 200 && bit4 == 800) {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Numero: 1");
+    delay(1000);
+  } else if (bit1 == 200 && bit2 == 200 && bit3 == 800 && bit4 == 200) {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Numero: 2");
+    delay(1000);
+  } else if (bit1 == 200 && bit2 == 200 && bit3 == 800 && bit4 == 800) {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Numero: 3");
+    delay(1000);
+  } else if (bit1 == 200 && bit2 == 800 && bit3 == 200 && bit4 == 200) {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Numero: 4");
+    delay(1000);
+  } else if (bit1 == 200 && bit2 == 800 && bit3 == 200 && bit4 == 800) {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Numero: 5");
+    delay(1000);
+  } else if (bit1 == 200 && bit2 == 800 && bit3 == 800 && bit4 == 200) {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Numero: 6");
+    delay(1000);
+  } else if (bit1 == 200 && bit2 == 800 && bit3 == 800 && bit4 == 800) {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Numero: 7");
+    delay(1000);
+  } else if (bit1 == 800 && bit2 == 200 && bit3 == 200 && bit4 == 200) {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Numero: 8");
+    delay(1000);
+  } else if (bit1 == 800 && bit2 == 200 && bit3 == 200 && bit4 == 800) {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Numero: 9");
+    delay(1000);
+  } else {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Numero Invalido");
+    delay(1000);
+  }
 }
