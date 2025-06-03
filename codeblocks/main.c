@@ -44,9 +44,14 @@ int gerador_de_numeros(int i);
 int tela_do_tabuleiro(int fase);
 void fim_de_jogo();
 int ranking();
-void aleatorizar_tabuleiro(int fase, int tamanho, int (*matriz)[tamanho]);
-void limpar_matriz(int tamanho, int (*matriz)[tamanho]);
+void aleatorizar_tabuleiro(int fase, int tamanho, int matriz[][tamanho]);
+void limpar_matriz(int tamanho, int matriz[][tamanho]);
 int definir_tamanho(int fase);
+void desenhar_gabarito(int celulas, int matriz[][celulas], int cordenada);
+void desenhar_interacao(int celulas, int prova[][celulas], int cordenada);
+void calcular_pontos(int fase, int celulas, int gabarito[][celulas], int prova[][celulas]);
+void desenhar_resultado(int celulas, int matriz[][celulas], int prova[][celulas], int cordenada);
+
 
 /* =============================== Registros =============================== */
 /**
@@ -73,6 +78,7 @@ int contador_de_jogadores = 0;
 int indice_do_jogador = 0;
 const int largura_da_tela = 500;
 const int altura_da_tela = 500;
+int cliques = 0;
 
 /* =========================== Função Principal ============================ */
 
@@ -251,140 +257,188 @@ int definir_jogador()
  */
 int tela_do_tabuleiro(int fase)
 {
-    // Variaveis da matriz
-    int i, tamanho_do_tabuleiro = definir_tamanho(fase);
-    int matriz[tamanho_do_tabuleiro][tamanho_do_tabuleiro];
-    int matriz_do_jogador[tamanho_do_tabuleiro][tamanho_do_tabuleiro];
-    int gabarito, escolha;
-    int linha, coluna;
-    int cliques = 0;
+    // fase = qtd_de_quadrados
 
-    limpar_matriz(tamanho_do_tabuleiro, matriz);
-    limpar_matriz(tamanho_do_tabuleiro, matriz_do_jogador);
-    aleatorizar_tabuleiro(fase ,tamanho_do_tabuleiro, matriz);
+    // Variáveis da matriz
+    int celulas = definir_tamanho(fase);
+    int matriz[celulas][celulas];
+    int matriz_do_jogador[celulas][celulas];
 
-    // Variaveis gráficas
+    limpar_matriz(celulas, matriz);
+    limpar_matriz(celulas, matriz_do_jogador);
+    aleatorizar_tabuleiro(fase, celulas, matriz);
+
+    // Variáveis gráficas
     char txt_pontos[30];
-    int quadrado_tamanho = 50; // Tamanho de cada quadrado
-    int espaco = 5; // Espaço entre os quadrados
+    const int quadrado_tamanho = 50;
+    const int espaco = 5;
 
     double tempo_inicio = GetTime();
-    double tempo_limite = 5.0; // Mostrar por 5 segundos
-    double tempo;
-    // Calculo feito por IA para centralizar o tabuleiro
-    int tabuleiro_largura = tamanho_do_tabuleiro * quadrado_tamanho; // tl = 4,5 ou 6 * 50
-    int tabuleiro_altura = tamanho_do_tabuleiro * quadrado_tamanho; // ta = 4,5 ou 6 * 50
-    int inicio_x = (largura_da_tela - tabuleiro_largura)/2; //
-    int inicio_y = (altura_da_tela - tabuleiro_altura)/2;
-//    int x = inicio_x + coluna * (quadrado_tamanho + espaco);
-//    int y = inicio_y + linha * (quadrado_tamanho + espaco);
+    const double tempo_limite_gabarito = 5.0;
+    const double tempo_exibicao_mensagem = 1.0; // Tempo para exibir "Tempo esgotado!"
+
+    int cordenada = (largura_da_tela - (celulas * quadrado_tamanho)) / 2;
 
     while (!WindowShouldClose())
     {
         BeginDrawing();
         ClearBackground(BLACK);
-        int pontuacao = jogador[0].pontos;
-        sprintf(txt_pontos, "Pontos: %d", pontuacao);
+
+        sprintf(txt_pontos, "Pontos: %d", jogador[0].pontos);
         DrawText(txt_pontos, 0, 0, 20, BLUE);
-        if (GetTime() - tempo_inicio < tempo_limite)
+
+        double tempo_atual = GetTime();
+
+        if (tempo_atual - tempo_inicio < tempo_limite_gabarito)
         {
-            for (linha = 0; linha < tamanho_do_tabuleiro; linha++)
-            {
-                for (coluna = 0; coluna < tamanho_do_tabuleiro; coluna++)
-                {
-                    Color cor = (matriz[linha][coluna] == 1) ? BLUE : GRAY;
-
-                    /* Calculo feito por IA */
-                    int x = inicio_x + coluna * (quadrado_tamanho + espaco);
-                    int y = inicio_y + linha * (quadrado_tamanho + espaco);
-
-                    DrawRectangle(x, y, quadrado_tamanho, quadrado_tamanho, cor);
-                }
-            }
+            // Fase de exibição do gabarito
+            desenhar_gabarito(celulas, matriz, cordenada);
+        }
+        else if (tempo_atual - tempo_inicio < tempo_limite_gabarito + tempo_exibicao_mensagem)
+        {
+            // Fase de "Tempo esgotado!"
+            DrawText("Tempo esgotado!", largura_da_tela / 2 - MeasureText("Tempo esgotado!", 30) / 2, GetScreenHeight() / 2 - 15, 30, WHITE);
         }
         else
         {
-            if (GetTime() - tempo_inicio < 6.0)
+            // Fase de interação do jogador e exibição do resultado
+            if (cliques < fase)
             {
-                DrawText("Tempo esgotado!", 250/2, 250 - 15, 30, WHITE); // Tamanho da fonte 40
+                desenhar_interacao(celulas, matriz_do_jogador, cordenada);
             }
-            else
+            if (cliques == fase)
             {
-                for (linha = 0; linha < tamanho_do_tabuleiro; linha++)
+                calcular_pontos(fase, celulas, matriz, matriz_do_jogador);
+                // O cliques é incrementado aqui para não re-calcular
+            }
+
+            // Após a fase de cliques e cálculo de pontos, exibe o resultado final
+            if (cliques > fase)
+            {
+                desenhar_resultado(celulas, matriz, matriz_do_jogador, cordenada);
+            }
+        }
+
+        EndDrawing();
+    }
+    CloseWindow();
+    return 0; // Adicionado um retorno, pois a função é int
+}
+
+void desenhar_gabarito(int celulas, int gabarito[][celulas], int cordenada)
+{
+    int linha, coluna, x, y;
+    for (linha = 0; linha < celulas; linha++)
+    {
+        for (coluna = 0; coluna < celulas; coluna++)
+        {
+            Color cor = (gabarito[linha][coluna] == 1) ? BLUE : GRAY;
+            // 55 = tamanho do quadrado (50) + espaco (5)
+            x = cordenada + coluna * 55;
+            y = cordenada + linha * 55;
+            DrawRectangle(x, y, 50, 50, cor);
+        }
+    }
+}
+
+// Desenhar o clique do jogador.
+void desenhar_interacao(int celulas, int prova[][celulas], int cordenada)
+{
+    int linha, coluna, x, y;
+    int quadrado_tamanho = 50;
+
+    for (int linha = 0; linha < celulas; linha++)
+    {
+        for (int coluna = 0; coluna < celulas; coluna++)
+        {
+            Color cor = GRAY;
+            if (prova[linha][coluna] == 1)
+            {
+                cor = GREEN; // Quadrados clicados pelo jogador
+            }
+
+            x = cordenada + coluna * 55;
+            y = cordenada + linha * 55;
+
+            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+            {
+                if (GetMouseX() >= x && GetMouseX() <= x + quadrado_tamanho &&
+                        GetMouseY() >= y && GetMouseY() <= y + quadrado_tamanho)
                 {
-                    for (coluna = 0; coluna < tamanho_do_tabuleiro; coluna++)
+                    // Garante que só conta clique se o quadrado não estiver marcado
+                    if (prova[linha][coluna] == 0)
                     {
-                        Color cor = GRAY; // Deixa todos os quadrados cinzas
-                        if (matriz_do_jogador[linha][coluna] == 1) cor = GREEN;
-
-                        // Calculo feito por IA
-                        int x = inicio_x + coluna * (quadrado_tamanho + espaco);
-                        int y = inicio_y + linha * (quadrado_tamanho + espaco);
-
-                        // Checar se o mouse está sendo pressionado
-                        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && cliques < fase)
-                        {
-                            // Checar se o mouse está no quadrado.
-                            if (GetMouseX() >= x && GetMouseX() <= x + quadrado_tamanho &&
-                                    GetMouseY() >= y && GetMouseY() <= y + quadrado_tamanho)
-                            {
-                                cliques++;
-                                matriz_do_jogador[linha][coluna] = 1;
-                            }
-                        }
-                        else if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON) && cliques < fase)
-                        {
-                            // Checar se o mouse está no quadrado.
-                            if (GetMouseX() >= x && GetMouseX() <= x + quadrado_tamanho &&
-                                    GetMouseY() >= y && GetMouseY() <= y + quadrado_tamanho)
-                            {
-                                cliques--;
-                                matriz_do_jogador[linha][coluna] = 0;
-                            }
-                        }
-                        else if(cliques==fase)
-                        {
-
-                            for(linha=0; linha<tamanho_do_tabuleiro; linha++)
-                            {
-                                for(coluna=0; coluna<tamanho_do_tabuleiro; coluna++)
-                                {
-                                    if(matriz[linha][coluna] == 1 && matriz_do_jogador[linha][coluna] == 1)
-                                    {
-                                        jogador[0].pontos += 100;
-                                    }
-                                }
-                            }
-                            cliques += 1;
-                        }
-                        // Executa quando tiver calculado os pontos.
-                        if(cliques>fase)
-                        {
-                            gabarito = matriz[linha][coluna];
-                            escolha = matriz_do_jogador[linha][coluna];
-                            if(gabarito == 1 && escolha == 0)
-                                cor = BLUE;
-                            else if(gabarito == 0 && escolha == 1)
-                                cor = RED;
-                            else if(gabarito == 1 && escolha == 1)
-                                cor = GREEN;
-                            else if(gabarito == 0 && escolha == 0)
-                                cor = GRAY;
-                        }
-                        DrawRectangle(x, y, quadrado_tamanho, quadrado_tamanho, cor);
-
-                        int pontuacao = jogador[0].pontos;
-                        sprintf(txt_pontos, "Pontos: %d", pontuacao);
-                        DrawText(txt_pontos, 0, 0, 20, BLUE);
+                        cliques++;
+                        prova[linha][coluna] = 1;
+                    }
+                }
+            }
+            else if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
+            {
+                if (GetMouseX() >= x && GetMouseX() <= x + quadrado_tamanho &&
+                        GetMouseY() >= y && GetMouseY() <= y + quadrado_tamanho)
+                {
+                    if (prova[linha][coluna] == 1)
+                    {
+                        cliques--;
+                        prova[linha][coluna] = 0;
                     }
                 }
             }
 
+            DrawRectangle(x, y, quadrado_tamanho, quadrado_tamanho, cor);
         }
-        EndDrawing();
     }
-    CloseWindow();
-} /* fim da função tabuleiro */
+}
+
+// Função para calcular os pontos após o término da fase de cliques
+void calcular_pontos(int fase, int celulas, int gabarito[][celulas], int prova[][celulas])
+{
+    // Esta parte do código só deve ser executada uma vez após os cliques terminarem
+    for (int linha = 0; linha < celulas; linha++)
+    {
+        for (int coluna = 0; coluna < celulas; coluna++)
+        {
+            if (gabarito[linha][coluna] == 1 && prova[linha][coluna] == 1)
+            {
+                jogador[0].pontos += 100;
+            }
+        }
+    }
+    cliques++; // Incrementa para que esta lógica não seja executada novamente
+}
+
+// Função para desenhar o resultado final
+void desenhar_resultado(int celulas, int gabarito[][celulas], int prova[][celulas], int cordenada)
+{
+    int linha, coluna, x, y;
+    for (linha = 0; linha < celulas; linha++)
+    {
+        for (coluna = 0; coluna < celulas; coluna++)
+        {
+            Color cor = GRAY;
+            if (gabarito[linha][coluna] == 1 && prova[linha][coluna] == 0)
+            {
+                cor = BLUE; // Era para ser clicado, mas não foi (erro de omissão)
+            }
+            else if (gabarito[linha][coluna] == 0 && prova[linha][coluna] == 1)
+            {
+                cor = RED; // Não era para ser clicado, mas foi (erro de inclusão)
+            }
+            else if (gabarito[linha][coluna] == 1 && prova[linha][coluna] == 1)
+            {
+                cor = GREEN; // Acertou
+            }
+            else if (gabarito[linha][coluna] == 0 && prova[linha][coluna] == 0)
+            {
+                cor = GRAY; // Acertou não clicando
+            }
+            x = cordenada + coluna * 55;
+            y = cordenada + linha * 55;
+            DrawRectangle(x, y, 50, 50, cor);
+        }
+    }
+}
 
 int gerador_de_numeros(int i)
 {
@@ -393,7 +447,7 @@ int gerador_de_numeros(int i)
     return n;
 }
 
-void limpar_matriz(int tamanho, int (*matriz)[tamanho])
+void limpar_matriz(int tamanho, int matriz[][tamanho])
 {
     int linha, coluna;
     /* Loop para preencher as matrizes com 0 */
@@ -406,7 +460,7 @@ void limpar_matriz(int tamanho, int (*matriz)[tamanho])
     } /* fim do loop das linhas */
 }
 
-void aleatorizar_tabuleiro(int fase, int tamanho, int (*matriz)[tamanho])
+void aleatorizar_tabuleiro(int fase, int tamanho, int matriz[][tamanho])
 {
     int linha_aleatoria, coluna_aleatoria, i;
     for(i=0; i<fase;)
