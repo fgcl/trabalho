@@ -51,6 +51,7 @@ void desenhar_gabarito(int celulas, int matriz[][celulas], int cordenada);
 void desenhar_interacao(int celulas, int prova[][celulas], int cordenada);
 void calcular_pontos(int fase, int celulas, int gabarito[][celulas], int prova[][celulas]);
 void desenhar_resultado(int celulas, int matriz[][celulas], int prova[][celulas], int cordenada);
+void desenhar_contador(int tempo_atual, int tempo_inicio);
 
 
 /* =============================== Registros =============================== */
@@ -273,11 +274,11 @@ int tela_do_tabuleiro(int fase)
     const int quadrado_tamanho = 50;
     const int espaco = 5;
 
-    double tempo_inicio = GetTime();
-    const double tempo_limite_gabarito = 5.0;
-    const double tempo_exibicao_mensagem = 1.0; // Tempo para exibir "Tempo esgotado!"
+    int tempo_inicio = time(NULL);
+    const int tempo_limite = 5;
+    const int tempo_exibicao_mensagem = 1; // Tempo para exibir "Tempo esgotado!"
 
-    int cordenada = (largura_da_tela - (celulas * quadrado_tamanho)) / 2;
+    int cordenada = (largura_da_tela - (celulas * quadrado_tamanho) - espaco) / 2;
 
     while (!WindowShouldClose())
     {
@@ -287,11 +288,11 @@ int tela_do_tabuleiro(int fase)
         sprintf(txt_pontos, "Pontos: %d", jogador[0].pontos);
         DrawText(txt_pontos, 0, 0, 20, BLUE);
 
-        double tempo_atual = GetTime();
-
-        if (tempo_atual - tempo_inicio < tempo_limite_gabarito)
+        int tempo_atual = time(NULL);
+        if (tempo_atual - tempo_inicio < tempo_limite)
         {
             // Fase de exibição do gabarito
+            desenhar_contador(tempo_atual, tempo_inicio);
             desenhar_gabarito(celulas, matriz, cordenada);
         }
         else if (tempo_atual - tempo_inicio < tempo_limite_gabarito + tempo_exibicao_mensagem)
@@ -333,9 +334,9 @@ void desenhar_gabarito(int celulas, int gabarito[][celulas], int cordenada)
         for (coluna = 0; coluna < celulas; coluna++)
         {
             Color cor = (gabarito[linha][coluna] == 1) ? BLUE : GRAY;
-            // 55 = tamanho do quadrado (50) + espaco (5)
-            x = cordenada + coluna * 55;
-            y = cordenada + linha * 55;
+            // 51 = tamanho do quadrado (50) + espaco (1)
+            x = cordenada + coluna * 51;
+            y = cordenada + linha * 51;
             DrawRectangle(x, y, 50, 50, cor);
         }
     }
@@ -357,8 +358,8 @@ void desenhar_interacao(int celulas, int prova[][celulas], int cordenada)
                 cor = GREEN; // Quadrados clicados pelo jogador
             }
 
-            x = cordenada + coluna * 55;
-            y = cordenada + linha * 55;
+            x = cordenada + coluna * 51;
+            y = cordenada + linha * 51;
 
             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
             {
@@ -433,8 +434,8 @@ void desenhar_resultado(int celulas, int gabarito[][celulas], int prova[][celula
             {
                 cor = GRAY; // Acertou não clicando
             }
-            x = cordenada + coluna * 55;
-            y = cordenada + linha * 55;
+            x = cordenada + coluna * 51;
+            y = cordenada + linha * 51;
             DrawRectangle(x, y, 50, 50, cor);
         }
     }
@@ -479,4 +480,15 @@ int definir_tamanho(int fase){
     int tamanho;
     tamanho = (fase <= 5) ? 4 : (fase <= 10) ? 5 : 6;
     return tamanho;
+}
+
+void desenhar_contador(int tempo_atual, int tempo_inicio)
+{
+    int tempo_decorrido, progresso, countdown;
+    tempo_decorrido = tempo_atual - tempo_inicio;
+    progresso = tempo_decorrido * 50;
+    countdown = 4 - tempo_decorrido;
+    DrawRectangle(150, 400, progresso, 20, BLUE);
+    DrawRectangleLines(150, 400, 200, 20, DARKGRAY);
+    DrawText(TextFormat("%d", countdown), 250, 400, 20, WHITE);
 }
