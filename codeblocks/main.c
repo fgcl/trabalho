@@ -18,13 +18,21 @@
  * para centralização de elementos graficos.
  */
 
-/* ============================== LOG DE BUGS ============================== */
-/* Report 08/06/2025:
-1. O mouse não volta para o icone original.
-2. Não consigo configurar o contador de tempo das janelas. (vai precisar de outra função)
-3. Depois de um tempo errando o codigo para.
+/* ============================= !LOG DE BUGS! ============================= */
+/*
+Report 08/06/2025:
+    - Não consigo configurar o contador de tempo das janelas. (vai precisar de outra função)
+    - Depois de um tempo errando o codigo para.
 */
-
+/* Timeline:
+    1. Janela que pede o nick do jogador. (OK)
+    2. Contador de tempo. (OK)
+    3. Mostra o gabarito do tabuleiro na tela por 5 segundos. (OK)
+    4. Pede para o jogador clicar nos quadrados revelados anteriormente. (OK)
+    5. Se o jogador acertar, o quadrado fica verde (OK) e passa para a próxima fase.
+    6. Se o jogador errar, é game over.
+    7. Uma tela de ranking deve aparecer quando o jogador perde.
+*/
 
 /* ====================== Diretivas de Processamento ====================== */
 /**
@@ -32,7 +40,7 @@
  *
  * @note Includes:
  * - raylib.h para partes visuais do jogo.
- * - stdio.h
+ * - stdio.h para debug com printf.
  * - stdlib.h usando a função rand() para gerar números aleatórios.
  * - time.h usando a função time(NULL) para obter o tempo atual.
  */
@@ -61,6 +69,7 @@ void desenhar_interacao(int celulas, int prova[][celulas], int cordenada);
 void calcular_pontos(int fase, int celulas, int gabarito[][celulas], int prova[][celulas]);
 void desenhar_resultado(int celulas, int matriz[][celulas], int prova[][celulas], int cordenada);
 void desenhar_contador(int tempo_atual, int tempo_inicio);
+void esperar_tempo(int tempo_limite);
 
 
 /* =============================== Registros =============================== */
@@ -92,15 +101,6 @@ int cliques = 0;
 
 /* =========================== Função Principal ============================ */
 
-/* Timeline:
-- 1. Janela que pede o nick do jogador. (OK)
-- 2. Contador de tempo.
-- 2. Mostra o gabarito do tabuleiro na tela por 5 segundos. (OK)
-- 3. Pede para o jogador clicar nos quadrados revelados anteriormente. (OK)
-- 4. Se o jogador acertar, o quadrado fica verde (OK) e passa para a próxima fase.
-- 5. Se o jogador errar, é game over.
-- 6. Uma tela de ranking deve aparecer quando o jogador perde.
-*/
 int main()
 {
     // Inicialização da semente para geração de números aleatórios.
@@ -115,6 +115,8 @@ int main()
     Image icon = LoadImage("icon.png");
     SetWindowIcon(icon);
     UnloadImage(icon);
+
+    // Chamada da função de cadastro do jogador.
     tela_de_cadastro();
     return 0;
 }
@@ -125,7 +127,7 @@ int main()
  * @brief Janela de cadastro do nome do jogador.
  *
  * @note:
- * Está função cria uma janela interativa para o jogador digitar o seu nome:
+ * Esta função cria uma janela interativa para o jogador digitar o seu nome:
  * - Verificando se o nome tem mais de 3 letras e menos de 10.
  * - Exibindo as letras em tempo real.
  * - Pode-se usar o backspace para apagar as letras.
@@ -142,7 +144,7 @@ void tela_de_cadastro()
     char nome[10] = "\0";
     int mouse_no_retangulo = 0;
     int fase = definir_jogador();
-    printf("fase %d", fase);
+    //printf("fase %d", fase);
     /* Area de carregamento do rshape */
     //Texture2D fundo = LoadTexture("fundoInicio.png");  // Carregamento da imagem de fundo da tela de cadastro.
 
@@ -178,6 +180,7 @@ void tela_de_cadastro()
             {
                 indice_do_jogador = definir_jogador();
                 strcpy(jogador[indice_do_jogador].nick, nome);
+                SetMouseCursor(MOUSE_CURSOR_DEFAULT);
                 tela_do_tabuleiro(fase);
                 //printf("Nome escolhido: %s\n", nome);
 
@@ -291,8 +294,6 @@ int tela_do_tabuleiro(int fase)
     limpar_matriz(celulas, matriz_do_jogador);
     aleatorizar_tabuleiro(fase, celulas, matriz);
 
-
-
     while (!WindowShouldClose())
     {
         BeginDrawing();
@@ -311,7 +312,7 @@ int tela_do_tabuleiro(int fase)
         else if (tempo_atual - tempo_inicio < tempo_limite + tempo_exibicao_mensagem)
         {
             // Fase de "Tempo esgotado!"
-            DrawText("Tempo esgotado!", largura_da_tela / 2 - MeasureText("Tempo esgotado!", 30) / 2, GetScreenHeight() / 2 - 15, 30, WHITE);
+            DrawText("Tempo esgotado!", 125, 235, 30, WHITE);
         }
         else
         {
@@ -325,24 +326,14 @@ int tela_do_tabuleiro(int fase)
                 calcular_pontos(fase, celulas, matriz, matriz_do_jogador);
                 // O cliques é incrementado aqui para não re-calcular
             }
-            int i = 0;
             // Após a fase de cliques e cálculo de pontos, exibe o resultado final
             if (cliques > fase)
             {
-                if(i=0)
-                {
-                    tempo_inicio = time(NULL);
-                    i++;
-                }
                 desenhar_resultado(celulas, matriz, matriz_do_jogador, cordenada);
-                tempo_atual = time(NULL);
-                printf("%d", tempo_atual - tempo_inicio);
-                if (tempo_atual - tempo_inicio < 15)
-                {
-                    fase++;
-                    cliques = 0;
-                    tela_do_tabuleiro(fase);
-                }
+                fase++;
+                cliques = 0;
+                break;
+
             }
         }
 
@@ -354,10 +345,10 @@ int tela_do_tabuleiro(int fase)
 
 /**
  * @brief Desenha o gabarito do jogo em uma matriz de células.
- * 
+ *
  * Esta função renderiza o gabarito do jogo, colorindo cada célula em azul ou cinza
  * dependendo do seu estado no gabarito original.
- * 
+ *
  * @param celulas Número de células em cada dimensão da matriz
  * @param gabarito Matriz 2D representando o gabarito do jogo
  * @param cordenada Coordenada inicial de desenho para posicionamento da matriz
@@ -381,11 +372,11 @@ void desenhar_gabarito(int celulas, int gabarito[][celulas], int cordenada)
 // Desenhar o clique do jogador.
 /**
  * @brief Desenha e gerencia a interação do jogador com o tabuleiro de jogo.
- * 
- * Esta função renderiza os quadrados do tabuleiro, permitindo que o jogador 
- * interaja através de cliques do mouse. Quadrados podem ser marcados com 
+ *
+ * Esta função renderiza os quadrados do tabuleiro, permitindo que o jogador
+ * interaja através de cliques do mouse. Quadrados podem ser marcados com
  * clique esquerdo e desmarcados com clique direito.
- * 
+ *
  * @param celulas Número de células em cada dimensão do tabuleiro
  * @param prova Matriz 2D representando o estado de cliques do jogador
  * @param cordenada Coordenada inicial de desenho para posicionamento da matriz
@@ -442,12 +433,12 @@ void desenhar_interacao(int celulas, int prova[][celulas], int cordenada)
 // Função para calcular os pontos após o término da fase de cliques
 /**
  * Calcula os pontos do jogador com base na comparação entre o gabarito e os cliques do jogador.
- * 
+ *
  * @param fase O número da fase atual do jogo
  * @param celulas Tamanho da matriz quadrada de células
  * @param gabarito Matriz representando o gabarito correto do jogo
  * @param prova Matriz representando os cliques do jogador
- * 
+ *
  * @note Atribui 100 pontos para cada célula corretamente clicada
  * @note Incrementa o contador de cliques para evitar múltiplas execuções
  */
@@ -470,12 +461,12 @@ void calcular_pontos(int fase, int celulas, int gabarito[][celulas], int prova[]
 // Função para desenhar o resultado final
 /**
  * Desenha o resultado final do jogo, mostrando o estado de cada célula comparado com o gabarito.
- * 
+ *
  * @param celulas Tamanho da matriz quadrada de células
  * @param gabarito Matriz representando o gabarito correto do jogo
  * @param prova Matriz representando os cliques do jogador
  * @param cordenada Coordenada inicial para desenho dos quadrados
- * 
+ *
  * @note Usa cores diferentes para representar diferentes tipos de resultados:
  * - BLUE: Célula que deveria ser clicada, mas não foi (erro de omissão)
  * - RED: Célula clicada que não deveria ter sido (erro de inclusão)
@@ -515,10 +506,10 @@ void desenhar_resultado(int celulas, int gabarito[][celulas], int prova[][celula
 
 /**
  * Gera um número aleatório inteiro entre 0 e i-1.
- * 
+ *
  * @param i Limite superior para geração do número aleatório
  * @return Um número inteiro aleatório no intervalo [0, i-1]
- * 
+ *
  * @note Usa a função rand() para gerar o número aleatório
  */
 int gerador_de_numeros(int i)
@@ -530,7 +521,7 @@ int gerador_de_numeros(int i)
 
 /**
  * Limpa uma matriz bidimensional, definindo todos os seus elementos como zero.
- * 
+ *
  * @param tamanho Dimensão da matriz quadrada
  * @param matriz Ponteiro para a matriz a ser limpa
  */
@@ -548,12 +539,12 @@ void limpar_matriz(int tamanho, int matriz[][tamanho])
 }
 
 /**
- * Preenche aleatoriamente uma matriz com um número de células iguais à fase atual.
- * 
+ * @brief Preenche aleatoriamente uma matriz com o número de células iguais à fase atual.
+ *
  * @param fase Número da fase atual, que determina quantas células serão preenchidas
  * @param tamanho Dimensão da matriz quadrada
  * @param matriz Ponteiro para a matriz a ser aleatorizada
- * 
+ *
  * @note Preenche células vazias (valor 0) com 1, de forma aleatória, sem sobrescrever células já preenchidas
  */
 void aleatorizar_tabuleiro(int fase, int tamanho, int matriz[][tamanho])
@@ -573,10 +564,10 @@ void aleatorizar_tabuleiro(int fase, int tamanho, int matriz[][tamanho])
 
 /**
  * Determina o tamanho do tabuleiro com base no número da fase.
- * 
+ *
  * @param fase Número da fase atual do jogo
  * @return Tamanho do tabuleiro (4, 5 ou 6) dependendo do número da fase
- * 
+ *
  * @note O tamanho do tabuleiro aumenta progressivamente com o avanço das fases
  */
 int definir_tamanho(int fase)
@@ -587,13 +578,12 @@ int definir_tamanho(int fase)
 }
 
 /**
- * Desenha um contador visual de tempo regressivo na tela.
- * 
- * @param tempo_atual Tempo atual do sistema
- * @param tempo_inicio Tempo de início do contador
- * 
- * @note Desenha uma barra de progresso azul e um texto com o tempo restante
- * @note O contador regressivo começa em 4 segundos
+ * @brief Desenha o contador de tempo regressivo na tela de gabarito.
+ *
+ * @param tempo_atual Tempo atual do sistema.
+ * @param tempo_inicio Tempo de início do contador.
+ *
+ * @note Desenha a barra de progresso azul e o contador regressivo de 4s.
  */
 void desenhar_contador(int tempo_atual, int tempo_inicio)
 {
