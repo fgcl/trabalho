@@ -88,7 +88,7 @@ void loop() {
       selecionar_modo();
       break;
     case 1:
-      if (modo == 1) {
+      if (modo == 0) {
         arduino_falante();
       } else {
         arduino_ouvinte();

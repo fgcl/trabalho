@@ -13,12 +13,12 @@
  *
  * Problemas encontrados: passar uma matriz para outra função. VLA - Variable Length Array
  *
- * @warning Uso de IA: 
+ * @warning Uso de IA:
  *  Autocomplete de código, auxílio na documentação e cálculos
  * para centralização de elementos graficos.
  */
 
- /* ====================== Diretivas de Processamento ====================== */
+/* ====================== Diretivas de Processamento ====================== */
 /**
  * @brief Inclusão das bibliotecas necessárias para o funcionamento do jogo.
  *
@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 
 /* ========================= Protótipos de Funções ========================= */
 
@@ -85,7 +86,7 @@ int cliques = 0;
 
 /* Timeline:
 - 1. Janela que pede o nick do jogador. (OK)
-- 2. Contador de tempo. 
+- 2. Contador de tempo.
 - 2. Mostra o gabarito do tabuleiro na tela por 5 segundos. (OK)
 - 3. Pede para o jogador clicar nos quadrados revelados anteriormente. (OK)
 - 4. Se o jogador acertar, o quadrado fica verde (OK) e passa para a próxima fase.
@@ -106,7 +107,7 @@ int main()
     Image icon = LoadImage("icon.png");
     SetWindowIcon(icon);
     UnloadImage(icon);
-
+    tela_de_cadastro();
     return 0;
 }
 
@@ -114,7 +115,7 @@ int main()
 
 /**
  * @brief Janela de cadastro do nome do jogador.
- * 
+ *
  * @note:
  * Está função cria uma janela interativa para o jogador digitar o seu nome:
  * - Verificando se o nome tem mais de 3 letras e menos de 10.
@@ -132,7 +133,8 @@ void tela_de_cadastro()
     int tecla = 0, indice_do_nome = 0;
     char nome[10] = "\0";
     int mouse_no_retangulo = 0;
-    
+    int fase = definir_jogador();
+    printf("fase %d", fase);
     /* Area de carregamento do rshape */
     //Texture2D fundo = LoadTexture("fundoInicio.png");  // Carregamento da imagem de fundo da tela de cadastro.
 
@@ -147,8 +149,8 @@ void tela_de_cadastro()
     {
         // Verifica se o mouse está dentro do retangulo.
         //mouse_no_retangulo = (GetMouseX()>125 && GetMouseX()<375 && GetMouseY()>200 && GetMouseY()<250)?
-        (CheckCollisionPointRec(GetMousePosition(), retangulo))?
-        1: 0;
+        mouse_no_retangulo = (CheckCollisionPointRec(GetMousePosition(), retangulo))?
+                             1: 0;
         if (mouse_no_retangulo)
         {
             SetMouseCursor(MOUSE_CURSOR_IBEAM); //Transforma o icone do mouse em um I.
@@ -168,7 +170,7 @@ void tela_de_cadastro()
             {
                 indice_do_jogador = definir_jogador();
                 strcpy(jogador[indice_do_jogador].nick, nome);
-                tela_de_contagem();
+                tela_do_tabuleiro(fase);
                 //printf("Nome escolhido: %s\n", nome);
 
             }
@@ -197,7 +199,8 @@ void tela_de_cadastro()
         {
             DrawRectangleRoundedLines(retangulo, 0.1, 0, BLUE);
         }
-        else{
+        else
+        {
             DrawRectangleRoundedLines(retangulo, 0.1, 0, GRAY);
         }
 
@@ -221,7 +224,8 @@ int definir_jogador()
 {
     int menor_pontos = 0;
     int numero_do_jogador;
-    for(int i = 0; i < 5; i++){
+    for(int i = 0; i < 5; i++)
+    {
         if(jogador[i].pontos == 0)
         {
             numero_do_jogador = i;
@@ -238,18 +242,18 @@ int definir_jogador()
 
 /**
  * @brief Renderiza e gerencia a tela do tabuleiro de jogo.
- * 
+ *
  * Esta função cria um tabuleiro de jogo com tamanho dinâmico baseado na fase atual,
  * gera posições aleatórias para quadrados azuis, e permite que o jogador interaja
  * clicando nos quadrados dentro de um tempo limite.
- * 
+ *
  * @param fase Número da fase atual, que determina o tamanho do tabuleiro e número de quadrados
  * @return int Valor de retorno não utilizado (pode ser modificado para retornar resultado do jogo)
- * 
+ *
  * @note A função gerencia a lógica de pontuação, renderização e interação do jogo de memória
  * @author Felipe
- * 
- *  TODO: 
+ *
+ *  TODO:
  * 1. Definir o indice do jogador que está jogando.
  * 2. Mostrar o tempo
  * 3. Mostrar o nome
@@ -259,16 +263,11 @@ int definir_jogador()
 int tela_do_tabuleiro(int fase)
 {
     // fase = qtd_de_quadrados
-
+    fase = (fase==0)? 3: fase;
     // Variáveis da matriz
     int celulas = definir_tamanho(fase);
     int matriz[celulas][celulas];
     int matriz_do_jogador[celulas][celulas];
-
-    limpar_matriz(celulas, matriz);
-    limpar_matriz(celulas, matriz_do_jogador);
-    aleatorizar_tabuleiro(fase, celulas, matriz);
-
     // Variáveis gráficas
     char txt_pontos[30];
     const int quadrado_tamanho = 50;
@@ -279,6 +278,12 @@ int tela_do_tabuleiro(int fase)
     const int tempo_exibicao_mensagem = 1; // Tempo para exibir "Tempo esgotado!"
 
     int cordenada = (largura_da_tela - (celulas * quadrado_tamanho) - espaco) / 2;
+
+    limpar_matriz(celulas, matriz);
+    limpar_matriz(celulas, matriz_do_jogador);
+    aleatorizar_tabuleiro(fase, celulas, matriz);
+
+
 
     while (!WindowShouldClose())
     {
@@ -295,7 +300,7 @@ int tela_do_tabuleiro(int fase)
             desenhar_contador(tempo_atual, tempo_inicio);
             desenhar_gabarito(celulas, matriz, cordenada);
         }
-        else if (tempo_atual - tempo_inicio < tempo_limite_gabarito + tempo_exibicao_mensagem)
+        else if (tempo_atual - tempo_inicio < tempo_limite + tempo_exibicao_mensagem)
         {
             // Fase de "Tempo esgotado!"
             DrawText("Tempo esgotado!", largura_da_tela / 2 - MeasureText("Tempo esgotado!", 30) / 2, GetScreenHeight() / 2 - 15, 30, WHITE);
@@ -312,11 +317,24 @@ int tela_do_tabuleiro(int fase)
                 calcular_pontos(fase, celulas, matriz, matriz_do_jogador);
                 // O cliques é incrementado aqui para não re-calcular
             }
-
+            int i = 0;
             // Após a fase de cliques e cálculo de pontos, exibe o resultado final
             if (cliques > fase)
             {
+                if(i=0)
+                {
+                    tempo_inicio = time(NULL);
+                    i++;
+                }
                 desenhar_resultado(celulas, matriz, matriz_do_jogador, cordenada);
+                tempo_atual = time(NULL);
+                printf("%d", tempo_atual - tempo_inicio);
+                if (tempo_atual - tempo_inicio < 15)
+                {
+                    fase++;
+                    cliques = 0;
+                    tela_do_tabuleiro(fase);
+                }
             }
         }
 
@@ -476,7 +494,8 @@ void aleatorizar_tabuleiro(int fase, int tamanho, int matriz[][tamanho])
     }
 }
 
-int definir_tamanho(int fase){
+int definir_tamanho(int fase)
+{
     int tamanho;
     tamanho = (fase <= 5) ? 4 : (fase <= 10) ? 5 : 6;
     return tamanho;
