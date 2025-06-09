@@ -70,7 +70,7 @@ void calcular_pontos(int fase, int celulas, int gabarito[][celulas], int prova[]
 void desenhar_resultado(int celulas, int matriz[][celulas], int prova[][celulas], int cordenada);
 void desenhar_contador(int tempo_atual, int tempo_inicio);
 void esperar_tempo(int tempo_limite);
-
+void temporizador(int tempo, int *pt_inicio, int *pt_estado);
 
 /* =============================== Registros =============================== */
 /**
@@ -279,20 +279,22 @@ int tela_do_tabuleiro(int fase)
     int celulas = definir_tamanho(fase);
     int matriz[celulas][celulas];
     int matriz_do_jogador[celulas][celulas];
+
     // Variáveis gráficas
     char txt_pontos[30];
     const int quadrado_tamanho = 50;
     const int espaco = 5;
-
-    int tempo_inicio = time(NULL);
-    const int tempo_limite = 5;
-    const int tempo_exibicao_mensagem = 1; // Tempo para exibir "Tempo esgotado!"
-
     int cordenada = (largura_da_tela - (celulas * quadrado_tamanho) - espaco) / 2;
 
     limpar_matriz(celulas, matriz);
     limpar_matriz(celulas, matriz_do_jogador);
     aleatorizar_tabuleiro(fase, celulas, matriz);
+
+    // Variaveis do temporizador
+    int estado = 0;
+    int tempo_inicial = time(NULL);
+    int *pt_tempoi = &tempo_inicial;
+    int *pt_estado = &estado;
 
     while (!WindowShouldClose())
     {
@@ -302,19 +304,20 @@ int tela_do_tabuleiro(int fase)
         sprintf(txt_pontos, "Pontos: %d", jogador[0].pontos);
         DrawText(txt_pontos, 0, 0, 20, BLUE);
 
-        int tempo_atual = time(NULL);
-        if (tempo_atual - tempo_inicio < tempo_limite)
+        if (estado == 0)
         {
+            temporizador(5, pt_tempoi, pt_estado);
             // Fase de exibição do gabarito
-            desenhar_contador(tempo_atual, tempo_inicio);
+            desenhar_contador(time(NULL), tempo_inicial);
             desenhar_gabarito(celulas, matriz, cordenada);
         }
-        else if (tempo_atual - tempo_inicio < tempo_limite + tempo_exibicao_mensagem)
+        else if (estado == 1)
         {
+            temporizador(2, pt_tempoi, pt_estado);
             // Fase de "Tempo esgotado!"
             DrawText("Tempo esgotado!", 125, 235, 30, WHITE);
         }
-        else
+        else if(estado == 2)
         {
             // Fase de interação do jogador e exibição do resultado
             if (cliques < fase)
@@ -329,12 +332,15 @@ int tela_do_tabuleiro(int fase)
             // Após a fase de cliques e cálculo de pontos, exibe o resultado final
             if (cliques > fase)
             {
+                temporizador(5, pt_tempoi, pt_estado);
                 desenhar_resultado(celulas, matriz, matriz_do_jogador, cordenada);
-                fase++;
-                cliques = 0;
-                break;
 
             }
+        }
+        else if (estado == 3){
+                fase++;
+                cliques = 0;
+ estado = 0;    tela_do_tabuleiro(fase);
         }
 
         EndDrawing();
@@ -594,4 +600,26 @@ void desenhar_contador(int tempo_atual, int tempo_inicio)
     DrawRectangle(150, 400, progresso, 20, BLUE);
     DrawRectangleLines(150, 400, 200, 20, DARKGRAY);
     DrawText(TextFormat("%d", countdown), 250, 400, 20, WHITE);
+}
+
+
+/**
+ * @brief Função para controlar o temporizador.
+ *
+ * @param tempo Tempo decorrido.
+ * @param pt_tempoi Ponteiro para o tempo inicial.
+ * @param pt_estado Ponteiro para o estado do jogo.
+ *
+ * @note Esta função calcula o tempo decorrido e atualiza o estado do jogo quando o tempo se esgota.
+ */
+void temporizador(int tempo, int *pt_tempoi, int *pt_estado)
+{
+    int tempo_atual, calculo;
+    tempo_atual = time(NULL);
+    calculo = (*pt_tempoi + tempo) - tempo_atual;
+    //printf("%d", calculo);
+    if(calculo == 0){
+        *pt_estado = *pt_estado + 1;
+        *pt_tempoi = time(NULL);
+    }
 }
