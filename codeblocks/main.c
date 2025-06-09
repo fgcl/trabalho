@@ -18,22 +18,6 @@
  * para centralização de elementos graficos.
  */
 
-/* ============================= !LOG DE BUGS! ============================= */
-/*
-Report 08/06/2025:
-    - Não consigo configurar o contador de tempo das janelas. (vai precisar de outra função)
-    - Depois de um tempo errando o codigo para.
-*/
-/* Timeline:
-    1. Janela que pede o nick do jogador. (OK)
-    2. Contador de tempo. (OK)
-    3. Mostra o gabarito do tabuleiro na tela por 5 segundos. (OK)
-    4. Pede para o jogador clicar nos quadrados revelados anteriormente. (OK)
-    5. Se o jogador acertar, o quadrado fica verde (OK) e passa para a próxima fase.
-    6. Se o jogador errar, é game over.
-    7. Uma tela de ranking deve aparecer quando o jogador perde.
-*/
-
 /* ====================== Diretivas de Processamento ====================== */
 /**
  * @brief Inclusão das bibliotecas necessárias para o funcionamento do jogo.
@@ -254,22 +238,14 @@ int definir_jogador()
 /**
  * @brief Renderiza e gerencia a tela do tabuleiro de jogo.
  *
- * Esta função cria um tabuleiro de jogo com tamanho dinâmico baseado na fase atual,
+ * @note Esta função cria um tabuleiro de jogo com tamanho dinâmico baseado na fase atual,
  * gera posições aleatórias para quadrados azuis, e permite que o jogador interaja
  * clicando nos quadrados dentro de um tempo limite.
  *
  * @param fase Número da fase atual, que determina o tamanho do tabuleiro e número de quadrados
  * @return int Valor de retorno não utilizado (pode ser modificado para retornar resultado do jogo)
  *
- * @note A função gerencia a lógica de pontuação, renderização e interação do jogo de memória
  * @author Felipe
- *
- *  TODO:
- * 1. Definir o indice do jogador que está jogando.
- * 2. Mostrar o tempo
- * 3. Mostrar o nome
- * 4. Interromper a função depois de um tempo.
- * 5. Chamar a função novamente com nova fase.
  */
 int tela_do_tabuleiro(int fase)
 {
@@ -340,7 +316,7 @@ int tela_do_tabuleiro(int fase)
         else if (estado == 3){
                 fase++;
                 cliques = 0;
- estado = 0;    tela_do_tabuleiro(fase);
+                tela_do_tabuleiro(fase);
         }
 
         EndDrawing();
@@ -438,7 +414,7 @@ void desenhar_interacao(int celulas, int prova[][celulas], int cordenada)
 
 // Função para calcular os pontos após o término da fase de cliques
 /**
- * Calcula os pontos do jogador com base na comparação entre o gabarito e os cliques do jogador.
+ * @brief Calcula os pontos com base na comparação da prova e o gabarito.
  *
  * @param fase O número da fase atual do jogo
  * @param celulas Tamanho da matriz quadrada de células
@@ -466,7 +442,7 @@ void calcular_pontos(int fase, int celulas, int gabarito[][celulas], int prova[]
 
 // Função para desenhar o resultado final
 /**
- * Desenha o resultado final do jogo, mostrando o estado de cada célula comparado com o gabarito.
+ * @brief Desenha o resultado final do jogo, mostrando o estado de cada célula.
  *
  * @param celulas Tamanho da matriz quadrada de células
  * @param gabarito Matriz representando o gabarito correto do jogo
@@ -511,7 +487,7 @@ void desenhar_resultado(int celulas, int gabarito[][celulas], int prova[][celula
 }
 
 /**
- * Gera um número aleatório inteiro entre 0 e i-1.
+ * @brief Gera um número aleatório inteiro entre 0 e i-1.
  *
  * @param i Limite superior para geração do número aleatório
  * @return Um número inteiro aleatório no intervalo [0, i-1]
@@ -526,7 +502,7 @@ int gerador_de_numeros(int i)
 }
 
 /**
- * Limpa uma matriz bidimensional, definindo todos os seus elementos como zero.
+ * @brief Limpa uma matriz bidimensional, definindo todos os seus elementos como zero.
  *
  * @param tamanho Dimensão da matriz quadrada
  * @param matriz Ponteiro para a matriz a ser limpa
@@ -551,7 +527,7 @@ void limpar_matriz(int tamanho, int matriz[][tamanho])
  * @param tamanho Dimensão da matriz quadrada
  * @param matriz Ponteiro para a matriz a ser aleatorizada
  *
- * @note Preenche células vazias (valor 0) com 1, de forma aleatória, sem sobrescrever células já preenchidas
+ * @note Preenche células aleatorias que estão vazias.
  */
 void aleatorizar_tabuleiro(int fase, int tamanho, int matriz[][tamanho])
 {
@@ -569,7 +545,7 @@ void aleatorizar_tabuleiro(int fase, int tamanho, int matriz[][tamanho])
 }
 
 /**
- * Determina o tamanho do tabuleiro com base no número da fase.
+ * @brief Determina o tamanho do tabuleiro com base no número da fase.
  *
  * @param fase Número da fase atual do jogo
  * @return Tamanho do tabuleiro (4, 5 ou 6) dependendo do número da fase
@@ -601,7 +577,6 @@ void desenhar_contador(int tempo_atual, int tempo_inicio)
     DrawRectangleLines(150, 400, 200, 20, DARKGRAY);
     DrawText(TextFormat("%d", countdown), 250, 400, 20, WHITE);
 }
-
 
 /**
  * @brief Função para controlar o temporizador.
