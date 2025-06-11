@@ -55,6 +55,8 @@ void desenhar_resultado(int celulas, int matriz[][celulas], int prova[][celulas]
 void desenhar_contador(int tempo_atual, int tempo_inicio);
 void esperar_tempo(int tempo_limite);
 void temporizador(int tempo, int *pt_inicio, int *pt_estado);
+void carregar_imagens();
+void execucao_do_jogo();
 
 /* =============================== Registros =============================== */
 /**
@@ -82,6 +84,7 @@ int indice_do_jogador = 0;
 const int largura_da_tela = 500;
 const int altura_da_tela = 500;
 int cliques = 0;
+int estado_do_jogo = 0;
 
 /* =========================== Função Principal ============================ */
 
@@ -89,7 +92,22 @@ int main()
 {
     // Inicialização da semente para geração de números aleatórios.
     srand(time(0));
+    execucao_do_jogo();
+    return 0;
+}
 
+/* ======================= Desenvolvimento de Funções ====================== */
+
+/**
+ * @brief Função para executar cada tela do jogo.
+ *
+ * @note Esta função é para organizar o codigo, chamando as funções com
+ * base no valor da váriavel estado_do_jogo();
+ *
+ * @author Felipe
+ */
+void execucao_do_jogo(){
+    int cache();
     // Inicialização da janela.
     SetTraceLogLevel(5); // Definir o log como 5 (mostrar somente erros).
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
@@ -100,12 +118,24 @@ int main()
     SetWindowIcon(icon);
     UnloadImage(icon);
 
-    // Chamada da função de cadastro do jogador.
-    tela_de_cadastro();
-    return 0;
+    while((!WindowShouldClose())){
+        //registro
+        if(estado_do_jogo == 0){
+            tela_de_cadastro();
+            estado_do_jogo = 1;
+        }
+        //tabuleiro
+        else if(estado_do_jogo == 1){
+            tela_do_tabuleiro(jogador[indice_do_jogador].fase);
+        }
+        //ranking quando o jogador perdeu.
+        else if(estado_do_jogo == 2){
+            printf("perdeu :)");
+        }
+    }
+    CloseWindow();
+    return;
 }
-
-/* ======================= Desenvolvimento de Funções ====================== */
 
 /**
  * @brief Janela de cadastro do nome do jogador.
@@ -117,21 +147,20 @@ int main()
  * - Pode-se usar o backspace para apagar as letras.
  * Ao presssionar enter, chama a função tela_de_contagem().
  *
- * @author Felipe Gonçalves
+ * @author Felipe
  *
  * TODO: Substituir o jogador[0] por um jogador vazio com a função definir_jogador()
  */
-
 void tela_de_cadastro()
 {
     int tecla = 0, indice_do_nome = 0;
     char nome[10] = "\0";
     int mouse_no_retangulo = 0;
-    int fase = definir_jogador();
+    indice_do_jogador = definir_jogador();
+    int fase = jogador[indice_do_jogador].fase;
     //printf("fase %d", fase);
     /* Area de carregamento do rshape */
     //Texture2D fundo = LoadTexture("fundoInicio.png");  // Carregamento da imagem de fundo da tela de cadastro.
-
     Image image = LoadImage("fundoInicio.png"); // Carregar imagem na RAM.
     Texture2D fundo = LoadTextureFromImage(image); // Converter para textura, para usar a GPU memory (VRAM)
     UnloadImage(image); // Remover imagem da RAM.
@@ -141,7 +170,7 @@ void tela_de_cadastro()
 
     while (!WindowShouldClose())
     {
-        // Verifica se o mouse está dentro do retangulo.
+        //Verifica se o mouse está dentro do retangulo.
         //mouse_no_retangulo = (GetMouseX()>125 && GetMouseX()<375 && GetMouseY()>200 && GetMouseY()<250)?
         mouse_no_retangulo = (CheckCollisionPointRec(GetMousePosition(), retangulo))?
                              1: 0;
@@ -162,10 +191,9 @@ void tela_de_cadastro()
             }
             if (IsKeyPressed(KEY_ENTER) && indice_do_nome>3)
             {
-                indice_do_jogador = definir_jogador();
                 strcpy(jogador[indice_do_jogador].nick, nome);
                 SetMouseCursor(MOUSE_CURSOR_DEFAULT);
-                tela_do_tabuleiro(fase);
+                break;
                 //printf("Nome escolhido: %s\n", nome);
 
             }
@@ -202,7 +230,8 @@ void tela_de_cadastro()
         DrawText(nome, 250/2 + 5, 200 + 8, 40, RED);
         EndDrawing();
     }
-    CloseWindow();
+    printf("ok");
+    return;
 }
 
 /**
@@ -251,6 +280,7 @@ int tela_do_tabuleiro(int fase)
 {
     // fase = qtd_de_quadrados
     fase = (fase==0)? 3: fase;
+
     // Variáveis da matriz
     int celulas = definir_tamanho(fase);
     int matriz[celulas][celulas];
@@ -283,19 +313,16 @@ int tela_do_tabuleiro(int fase)
         if (estado == 0)
         {
             temporizador(5, pt_tempoi, pt_estado);
-            // Fase de exibição do gabarito
             desenhar_contador(time(NULL), tempo_inicial);
             desenhar_gabarito(celulas, matriz, cordenada);
         }
         else if (estado == 1)
         {
             temporizador(2, pt_tempoi, pt_estado);
-            // Fase de "Tempo esgotado!"
             DrawText("Tempo esgotado!", 125, 235, 30, WHITE);
         }
         else if(estado == 2)
         {
-            // Fase de interação do jogador e exibição do resultado
             if (cliques < fase)
             {
                 desenhar_interacao(celulas, matriz_do_jogador, cordenada);
@@ -303,26 +330,23 @@ int tela_do_tabuleiro(int fase)
             if (cliques == fase)
             {
                 calcular_pontos(fase, celulas, matriz, matriz_do_jogador);
-                // O cliques é incrementado aqui para não re-calcular
             }
-            // Após a fase de cliques e cálculo de pontos, exibe o resultado final
             if (cliques > fase)
             {
                 temporizador(5, pt_tempoi, pt_estado);
                 desenhar_resultado(celulas, matriz, matriz_do_jogador, cordenada);
-
             }
         }
-        else if (estado == 3){
-                fase++;
-                cliques = 0;
-                tela_do_tabuleiro(fase);
+        else if (estado == 3)
+        {
+            jogador[indice_do_jogador].fase = fase + 1;
+            cliques = 0;
+            break;
         }
 
         EndDrawing();
     }
-    CloseWindow();
-    return 0; // Adicionado um retorno, pois a função é int
+    return 0;
 }
 
 /**
@@ -351,7 +375,6 @@ void desenhar_gabarito(int celulas, int gabarito[][celulas], int cordenada)
     }
 }
 
-// Desenhar o clique do jogador.
 /**
  * @brief Desenha e gerencia a interação do jogador com o tabuleiro de jogo.
  *
@@ -375,7 +398,7 @@ void desenhar_interacao(int celulas, int prova[][celulas], int cordenada)
             Color cor = GRAY;
             if (prova[linha][coluna] == 1)
             {
-                cor = GREEN; // Quadrados clicados pelo jogador
+                cor = GREEN;
             }
 
             x = cordenada + coluna * 51;
@@ -386,7 +409,6 @@ void desenhar_interacao(int celulas, int prova[][celulas], int cordenada)
                 if (GetMouseX() >= x && GetMouseX() <= x + quadrado_tamanho &&
                         GetMouseY() >= y && GetMouseY() <= y + quadrado_tamanho)
                 {
-                    // Garante que só conta clique se o quadrado não estiver marcado
                     if (prova[linha][coluna] == 0)
                     {
                         cliques++;
@@ -426,6 +448,7 @@ void desenhar_interacao(int celulas, int prova[][celulas], int cordenada)
  */
 void calcular_pontos(int fase, int celulas, int gabarito[][celulas], int prova[][celulas])
 {
+    int cache = 0;
     // Esta parte do código só deve ser executada uma vez após os cliques terminarem
     for (int linha = 0; linha < celulas; linha++)
     {
@@ -433,11 +456,15 @@ void calcular_pontos(int fase, int celulas, int gabarito[][celulas], int prova[]
         {
             if (gabarito[linha][coluna] == 1 && prova[linha][coluna] == 1)
             {
-                jogador[0].pontos += 100;
+                jogador[indice_do_jogador].pontos += 100;
+                cache++;
             }
         }
     }
-    cliques++; // Incrementa para que esta lógica não seja executada novamente
+    if(!(cache == fase)){
+        estado_do_jogo = 2;
+    }
+    cliques++;
 }
 
 // Função para desenhar o resultado final
@@ -593,7 +620,8 @@ void temporizador(int tempo, int *pt_tempoi, int *pt_estado)
     tempo_atual = time(NULL);
     calculo = (*pt_tempoi + tempo) - tempo_atual;
     //printf("%d", calculo);
-    if(calculo == 0){
+    if(calculo == 0)
+    {
         *pt_estado = *pt_estado + 1;
         *pt_tempoi = time(NULL);
     }
