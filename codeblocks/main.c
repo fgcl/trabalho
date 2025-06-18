@@ -492,11 +492,11 @@ void desenhar_resultado(int celulas, int gabarito[][celulas], int prova[][celula
             Color cor = GRAY;
             if (gabarito[linha][coluna] == 1 && prova[linha][coluna] == 0)
             {
-                cor = BLUE; // Era para ser clicado, mas não foi (erro de omissão)
+                cor = BLUE; // Era para ser clicado, mas não foi
             }
             else if (gabarito[linha][coluna] == 0 && prova[linha][coluna] == 1)
             {
-                cor = RED; // Não era para ser clicado, mas foi (erro de inclusão)
+                cor = RED; // Não era para ser clicado, mas foi
             }
             else if (gabarito[linha][coluna] == 1 && prova[linha][coluna] == 1)
             {
@@ -582,7 +582,7 @@ void aleatorizar_tabuleiro(int fase, int tamanho, int matriz[][tamanho])
 int definir_tamanho(int fase)
 {
     int tamanho;
-    tamanho = (fase <= 5) ? 4 : (fase <= 10) ? 5 : 6;
+    tamanho = (fase <= 5)? 4 : (fase <= 10)? 5 : 6;
     return tamanho;
 }
 
@@ -619,8 +619,8 @@ void temporizador(int tempo, int *pt_tempoi, int *pt_estado)
     int tempo_atual, calculo;
     tempo_atual = time(NULL);
     calculo = (*pt_tempoi + tempo) - tempo_atual;
-    //printf("%d", calculo);
-    if(calculo == 0)
+    //printf("%d %d %d \n", *pt_tempoi, tempo_atual, calculo);
+    if(calculo <= 0)
     {
         *pt_estado = *pt_estado + 1;
         *pt_tempoi = time(NULL);

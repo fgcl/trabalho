@@ -22,8 +22,7 @@
  *  - Protoboard.
  *  - Display LCD 16x2.
  *  - 12x Jumpers.
- *  - Buzzer.
- *  - Microfone.
+ *  - LED Receptor e Emissor Infravermelho
  *  - 4x Botões.
  *  - Leds amarelo, verde e vermelho.
  *  - Resistor de 300 ohms.
@@ -59,7 +58,6 @@ int modo = 0,
 void arduino_falante();
 void arduino_ouvinte();
 int escolher_numero();
-void reproduzir_som(int byte1, int byte2, int byte3, int byte4);
 void selecionar_modo();
 void resetar();
 
@@ -90,7 +88,7 @@ void loop() {
     case 1:
       if (modo == 0) {
         arduino_falante();
-      } else {
+      } else if (modo == 1) {
         arduino_ouvinte();
       }
       break;
@@ -124,50 +122,38 @@ void arduino_falante() {
   int numero = escolher_numero();
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("Tocando...");
+  lcd.print("Enviando...");
   while (digitalRead(BOTAO_ACAO) == LOW) {
     switch (numero) {
-      case 1:  // equivale a 0001
-        reproduzir_som(200, 200, 200, 800);
+      case 1 : 
+        irsend.sendNEC(0xFF8877, 32);
         break;
-      case 2:  // equivale a 0010
-        reproduzir_som(200, 200, 800, 200);
+      case 2:
+        irsend.sendNEC(0xFF48B7, 32);
         break;
-      case 3:  // equivale a 0011
-        reproduzir_som(200, 200, 800, 800);
+      case 3:
+        irsend.sendNEC(0xFFC837, 32);
         break;
-      case 4:  // equivale a 0100
-        reproduzir_som(200, 800, 200, 200);
+      case 4:
+        irsend.sendNEC(0xFF28D7, 32);
         break;
-      case 5:  // equivale a 0101
-        reproduzir_som(200, 800, 200, 800);
+      case 5:
+        irsend.sendNEC(0xFFA857, 32);
         break;
-      case 6:  // equivale a 0110
-        reproduzir_som(200, 800, 800, 200);
+      case 6:
+        irsend.sendNEC(0xFF6897, 32);
         break;
-      case 7:  // equivale a 0111
-        reproduzir_som(200, 800, 800, 800);
+      case 7: 
+        irsend.sendNEC(0xFFE817, 32);
         break;
-      case 8:  // equivale a 1000
-        reproduzir_som(800, 200, 200, 200);
+      case 8:
+        irsend.sendNEC(0xFF18E7, 32);
         break;
-      case 9:  // equivale a 1001
-        reproduzir_som(800, 200, 200, 800);
+      case 9:
+        irsend.sendNEC(0xFF9867, 32);
         break;
     }
   }
-}
-
-void reproduzir_som(int bit1, int bit2, int bit3, int bit4) {
-  tone(BUZZER, bit1);
-  delay(200);
-  tone(BUZZER, bit2);
-  delay(200);
-  tone(BUZZER, bit3);
-  delay(200);
-  tone(BUZZER, bit4);
-  delay(200);
-  noTone(BUZZER);
 }
 
 // Função para o jogador escolher o número.
@@ -192,94 +178,25 @@ int escolher_numero() {
     if (digitalRead(BOTAO_DIMINUIR) == HIGH && numero > 0) {
       numero--;
       delay(200);
-    } 
+    }
   }
   return numero;
 }
 
-// TODO: Refatorar as funções abaixo.
 // Função para o arduino ouvinte.
 void arduino_ouvinte() {
-  int bits[4];
   int i = 0;
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("Aguardando Sons");
+  lcd.print("Decodificando...");
+  delay(500);
   while (digitalRead(BOTAO_ACAO) == LOW && i < 4) {
-    int valor_analogico = analogRead(MICROFONE);
-    if (valor_analogico > 500) {
-      bits[i] = map(valor_analogico, 500, 1023, 200, 800);
-      delay(200);
+      
       i++;
     }
   }
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("Sons Capturados");
+  lcd.print("Sinais Reconhecidos");
   delay(1000);
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print("Analisando...");
-  delay(1000);
-
-  //Serial.print(bits[0]);
-  //Serial.print(bits[1]);
-  //Serial.print(bits[2]);
-  //Serial.print(bits[3]);
-
-  verificar_sequencia(bits[0], bits[1], bits[2], bits[3]);
-}
-
-void verificar_sequencia(int bit1, int bit2, int bit3, int bit4) {
-  if (bit1 == 200 && bit2 == 200 && bit3 == 200 && bit4 == 800) {
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Numero: 1");
-    delay(1000);
-  } else if (bit1 == 200 && bit2 == 200 && bit3 == 800 && bit4 == 200) {
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Numero: 2");
-    delay(1000);
-  } else if (bit1 == 200 && bit2 == 200 && bit3 == 800 && bit4 == 800) {
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Numero: 3");
-    delay(1000);
-  } else if (bit1 == 200 && bit2 == 800 && bit3 == 200 && bit4 == 200) {
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Numero: 4");
-    delay(1000);
-  } else if (bit1 == 200 && bit2 == 800 && bit3 == 200 && bit4 == 800) {
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Numero: 5");
-    delay(1000);
-  } else if (bit1 == 200 && bit2 == 800 && bit3 == 800 && bit4 == 200) {
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Numero: 6");
-    delay(1000);
-  } else if (bit1 == 200 && bit2 == 800 && bit3 == 800 && bit4 == 800) {
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Numero: 7");
-    delay(1000);
-  } else if (bit1 == 800 && bit2 == 200 && bit3 == 200 && bit4 == 200) {
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Numero: 8");
-    delay(1000);
-  } else if (bit1 == 800 && bit2 == 200 && bit3 == 200 && bit4 == 800) {
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Numero: 9");
-    delay(1000);
-  } else {
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Numero Invalido");
-    delay(1000);
-  }
 }
