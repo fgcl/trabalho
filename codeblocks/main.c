@@ -37,6 +37,7 @@
 
 /* ========================= Protótipos de Funções ========================= */
 
+void tela_de_inicio();
 void tela_de_cadastro();
 void tela_de_contagem();
 int registro_do_jogador();
@@ -44,7 +45,7 @@ int definir_jogador();
 int gerador_de_numeros(int i);
 int tela_do_tabuleiro(int fase);
 void fim_de_jogo();
-int ranking();
+void mostrar_ranking();
 void aleatorizar_tabuleiro(int fase, int tamanho, int matriz[][tamanho]);
 void limpar_matriz(int tamanho, int matriz[][tamanho]);
 int definir_tamanho(int fase);
@@ -107,7 +108,7 @@ int main()
  * @author Felipe
  */
 void execucao_do_jogo(){
-    int cache();
+    
     // Inicialização da janela.
     SetTraceLogLevel(5); // Definir o log como 5 (mostrar somente erros).
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
@@ -118,24 +119,86 @@ void execucao_do_jogo(){
     SetWindowIcon(icon);
     UnloadImage(icon);
 
-    while((!WindowShouldClose())){
-        //registro
-        if(estado_do_jogo == 0){
-            tela_de_cadastro();
-            estado_do_jogo = 1;
-        }
-        //tabuleiro
-        else if(estado_do_jogo == 1){
-            tela_do_tabuleiro(jogador[indice_do_jogador].fase);
-        }
-        //ranking quando o jogador perdeu.
-        else if(estado_do_jogo == 2){
-            printf("perdeu :)");
+    while(!WindowShouldClose()) {
+        switch (estado_do_jogo) {
+            case 0:
+                tela_de_inicio();
+                break;
+            case 1:
+                tela_de_cadastro();
+                estado_do_jogo = 2;
+                break;
+            case 2:
+                tela_do_tabuleiro(jogador[indice_do_jogador].fase);
+                break;
+            case 3:
+                mostrar_ranking();
+                break;
         }
     }
     CloseWindow();
     return;
 }
+
+/*Tela Inicio*/
+
+void tela_de_inicio() {
+    while (!WindowShouldClose()) {
+        BeginDrawing();
+        ClearBackground(DARKBLUE);
+        DrawText("JOGO DA MEMÓRIA", 100, 100, 30, WHITE);
+        DrawText("Clique para Iniciar", 130, 200, 20, LIGHTGRAY);
+        EndDrawing();
+
+        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            estado_do_jogo = 1;
+            break;
+        }
+    }
+}
+/*Ranking*/
+
+void mostrar_ranking() {
+    for (int i = 0; i < 4 - 1; i++) {
+        for (int j = i + 1; j < 4; j++) {
+            if (jogador[j].pontos > jogador[i].pontos) {
+                registro temp = jogador[i];
+                jogador[i] = jogador[j];
+                jogador[j] = temp;
+            }
+        }
+    }
+
+    while (!WindowShouldClose()) {
+        BeginDrawing();
+        ClearBackground(BLACK);
+        DrawText("RANKING", 180, 50, 30, GOLD);
+
+        for (int i = 0; i < 4; i++) {
+            char texto[100];
+            sprintf(texto, "%dº %s - %d pontos", i + 1, jogador[i].nick, jogador[i].pontos);
+            DrawText(texto, 100, 100 + i * 40, 20, WHITE);
+        }
+
+        DrawRectangle(150, 350, 200, 40, DARKGRAY);
+        DrawText("REINICIAR", 180, 360, 20, WHITE);
+        EndDrawing();
+
+        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            Vector2 mouse = GetMousePosition();
+            if (mouse.x >= 150 && mouse.x <= 350 &&
+                mouse.y >= 350 && mouse.y <= 390) {
+                estado_do_jogo = 0;
+                for (int i = 0; i < 4; i++) {
+                    jogador[i].pontos = 0;
+                    jogador[i].fase = 0;
+                }
+                break;
+            }
+        }
+    }
+}
+
 
 /**
  * @brief Janela de cadastro do nome do jogador.
@@ -462,7 +525,7 @@ void calcular_pontos(int fase, int celulas, int gabarito[][celulas], int prova[]
         }
     }
     if(!(cache == fase)){
-        estado_do_jogo = 2;
+        estado_do_jogo = 3;
     }
     cliques++;
 }
